@@ -2615,14 +2615,7 @@ def get_next_restart_datetime(now: datetime | None = None) -> datetime:
         current = current.replace(tzinfo=MSK_TZ)
     else:
         current = current.astimezone(MSK_TZ)
-
-    for hour in RESTART_HOURS_MSK:
-        candidate = current.replace(hour=hour, minute=0, second=0, microsecond=0)
-        if candidate > current:
-            return candidate
-
-    next_day = current + timedelta(days=1)
-    return next_day.replace(hour=RESTART_HOURS_MSK[0], minute=0, second=0, microsecond=0)
+    return current + timedelta(hours=3)
 
 
 async def restart_process_later() -> None:
