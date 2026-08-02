@@ -5899,6 +5899,7 @@ async def on_guild_join(guild: discord.Guild) -> None:
 
 @bot.event
 async def on_ready() -> None:
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="discord.gg/diamondshop"))
     global startup_done, restart_task, command_sync_done
     ensure_restart_task()
     await restore_persistent_views()
