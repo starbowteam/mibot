@@ -1,0 +1,60 @@
+{
+  "guilds": {
+    "1466147160763666472": {
+      "members": {
+        "1297574440875462707": {
+          "joinEvents": [],
+          "leaveEvents": [],
+          "knownRoleNames": [
+            "ASIXEZ",
+            "Main Famq"
+          ],
+          "lastNickname": "ASX | dann | 40798",
+          "lastUsername": "izituller_45247",
+          "lastGlobalName": "iZiTuller",
+          "boostEvents": [],
+          "lastSeenAt": "2026-08-02T14:52:32.010053+00:00",
+          "lastAvatarUrl": "https://cdn.discordapp.com/avatars/1297574440875462707/e526a78ec557ec9dacb17d2bbdbd6a9b.png?size=1024",
+          "lastBannerUrl": "",
+          "lastGuildAvatarUrl": "",
+          "lastAvatarDecoration": "",
+          "lastAccentColor": ""
+        },
+        "1422781531612512408": {
+          "joinEvents": [],
+          "leaveEvents": [],
+          "knownRoleNames": [
+            "ASIXEZ",
+            "Curator",
+            "Recruit"
+          ],
+          "lastNickname": "Curator | Джоель | 343579",
+          "lastUsername": "ula1231",
+          "lastGlobalName": "ula",
+          "boostEvents": [],
+          "lastSeenAt": "2026-08-02T16:17:45.186192+00:00",
+          "lastAvatarUrl": "https://cdn.discordapp.com/avatars/1422781531612512408/34b4cf625319794d540777cd4f9c71be.png?size=1024",
+          "lastBannerUrl": "",
+          "lastGuildAvatarUrl": "",
+          "lastAvatarDecoration": "https://cdn.discordapp.com/avatar-decoration-presets/a_556fc50ced539b4050f57769bdf7006b.png?size=96",
+          "lastAccentColor": ""
+        },
+        "1196408909783633972": {
+          "joinEvents": [],
+          "leaveEvents": [],
+          "knownRoleNames": [],
+          "lastNickname": "! irreversibledamage",
+          "lastUsername": "obscureperson",
+          "lastGlobalName": "! irreversibledamage",
+          "boostEvents": [],
+          "lastSeenAt": "2026-08-02T16:25:49.748191+00:00",
+          "lastAvatarUrl": "https://cdn.discordapp.com/avatars/1196408909783633972/bf85d29bcc31a0c81b1c7cc06bd208f7.png?size=1024",
+          "lastBannerUrl": "",
+          "lastGuildAvatarUrl": "",
+          "lastAvatarDecoration": "https://cdn.discordapp.com/avatar-decoration-presets/a_3c97a2d37f433a7913a1c7b7a735d000.png?size=96",
+          "lastAccentColor": ""
+        }
+      }
+    }
+  }
+}

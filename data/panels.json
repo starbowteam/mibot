@@ -1,0 +1,26 @@
+{
+  "famq_application_state:1466147160763666472": {
+    "closedServers": []
+  },
+  "famq_panel:1466147160763666472": {
+    "imageMessageId": 1533481068890423360,
+    "messageId": 1533481071272792307,
+    "channelId": 1466147735873786200
+  },
+  "famq_voice_panel:1466147160763666472": {
+    "messageId": 1533481080923881585,
+    "channelId": 1495067186237145188
+  },
+  "famq_application_state:1495718321340026942": {
+    "closedServers": []
+  },
+  "famq_panel:1495718321340026942": {
+    "imageMessageId": 1533481102663225550,
+    "messageId": 1533481104567304293,
+    "channelId": 1495718322929406064
+  },
+  "famq_voice_panel:1495718321340026942": {
+    "messageId": 1533481115635945654,
+    "channelId": 1495718322929406071
+  }
+}
