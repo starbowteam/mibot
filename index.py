@@ -854,6 +854,25 @@ application_action_locks: dict[int, asyncio.Lock] = {}
 def build_panel_embed(guild_id: int) -> discord.Embed:
     project = get_project(guild_id)
     visible_options = get_visible_application_options(guild_id)
+
+    if guild_id == FAMQ_GUILD_ID:
+        embed = make_embed(
+            description="\n".join(
+                [
+                    f"{EMOJI_APPLICATION_INTRO_TEXT} Путь в семью начинается здесь!",
+                    "• Уведомление о приглашении на обзвон обычно отправляется в личные сообщения.",
+                    "Обычно заявки обрабатываются в течение 1-2 дней — всё зависит от того, насколько загружены наши рекрутеры на данный момент.",
+                    "",
+                    "Подать заявку можно только при открытом наборе. Если не выходит — набор закрыт.",
+                ]
+            ),
+            color=COLOR_PANEL,
+        )
+        # Изображение внутри одного эмбэда Discord выводит снизу и на всю его ширину.
+        if PANEL_BANNER_URL:
+            embed.set_image(url=PANEL_BANNER_URL)
+        return embed
+
     open_lines = [
         f"{option.get('emoji_text', '•')} **{option['label']}**"
         for option in visible_options
@@ -973,57 +992,62 @@ def build_dm_embed(title: str, description: str) -> discord.Embed:
     )
 
 
-def build_staff_panel_embed(guild: discord.Guild) -> discord.Embed:
-    role_groups = (
-        ("Chief Recruit", CHIEF_RECRUIT_ROLE_ID, EMOJI_ACCEPT_TEXT),
-        ("Dep Chief Recruit", DEP_CHIEF_RECRUIT_ROLE_ID, EMOJI_REVIEW_TEXT),
-        ("Boss Famq", FAMQ_BOSS_ROLE_ID, EMOJI_DETROIT_TEXT),
-        ("High Famq", FAMQ_HIGH_ROLE_ID, EMOJI_SF_TEXT),
-        ("Curators", FAMQ_CURATOR_ROLE_ID, EMOJI_CALL_TEXT),
-        ("Dep Leaders", FAMQ_DEP_LEADER_ROLE_ID, EMOJI_REVIEW_TEXT),
-        ("Leaders", FAMQ_FRIEND_VERIFY_ROLE_1_ID, EMOJI_ACCEPT_TEXT),
-        ("Recruits", FAMQ_RECRUITER_ROLE_ID, EMOJI_ORLANDO_TEXT),
-    )
+STAFF_ROLE_GROUPS = (
+    ("Leaders", FAMQ_FRIEND_VERIFY_ROLE_1_ID, EMOJI_STAFF_LEADERS_TEXT),
+    ("Dep Leaders", FAMQ_DEP_LEADER_ROLE_ID, EMOJI_STAFF_DEP_LEADERS_TEXT),
+    ("Chief Recruit", CHIEF_RECRUIT_ROLE_ID, EMOJI_STAFF_CHIEF_RECRUIT_TEXT),
+    ("Curators", FAMQ_CURATOR_ROLE_ID, EMOJI_STAFF_CURATORS_TEXT),
+    ("Dep Chief Recruit", DEP_CHIEF_RECRUIT_ROLE_ID, EMOJI_STAFF_DEP_CHIEF_RECRUIT_TEXT),
+    ("Boss", FAMQ_BOSS_ROLE_ID, EMOJI_STAFF_BOSS_TEXT),
+    ("High", FAMQ_HIGH_ROLE_ID, EMOJI_STAFF_HIGH_TEXT),
+    ("Recruits", FAMQ_RECRUITER_ROLE_ID, EMOJI_STAFF_RECRUITS_TEXT),
+)
 
-    members_by_role = {role_id: set() for _, role_id, _ in role_groups}
+
+def build_staff_panel_embed(guild: discord.Guild) -> discord.Embed:
+    """Состав семьи: каждый участник показывается только в высшей группе."""
+    members_by_role = {role_id: [] for _title, role_id, _emoji in STAFF_ROLE_GROUPS}
     for member in guild.members:
         if member.bot:
             continue
-        highest_role = None
-        highest_pos = -1
-        for _, role_id, _ in role_groups:
-            role = guild.get_role(role_id)
-            if role and role in member.roles and role.position > highest_pos:
-                highest_pos = role.position
-                highest_role = role_id
-        if highest_role is not None:
-            members_by_role[highest_role].add(member)
+        member_role_ids = {role.id for role in member.roles}
+        # Порядок STAFF_ROLE_GROUPS — утверждённая иерархия, а не позиция роли в Discord.
+        for _title, role_id, _emoji in STAFF_ROLE_GROUPS:
+            if role_id in member_role_ids:
+                members_by_role[role_id].append(member)
+                break
 
-    embed = make_embed(
-        title=f"{EMOJI_ACCEPT_TEXT} Состав семьи ASIXEZ",
-        description=(
-            "Актуальный список старшего состава, кураторов и рекрутеров.\n"
-            "Панель обновляется автоматически после каждого рестарта бота."
-        ),
-        color=COLOR_PANEL,
-        timestamp=datetime.now(timezone.utc),
-    )
-
-    for title, role_id, emoji_text in role_groups:
-        members = sorted(members_by_role.get(role_id, []), key=lambda m: m.display_name.lower())
-        if not members:
-            value = "—"
-        else:
-            value = "\n".join(f"- {m.mention}" for m in members)
-            value = trim_embed_text(value, limit=1024)
+    embed = make_embed(color=COLOR_PANEL)
+    for title, role_id, emoji_text in STAFF_ROLE_GROUPS:
+        members = sorted(members_by_role[role_id], key=lambda member: member.display_name.casefold())
+        value = "\n".join(member.mention for member in members) if members else "—"
         embed.add_field(
             name=f"{emoji_text} {title}",
-            value=value,
+            value=trim_embed_text(value, limit=1024),
             inline=False,
         )
-
-    embed.set_footer(text=f"ASIXEZ • обновлено {format_log_time_msk()}")
     return embed
+
+
+class StaffPanelView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="Обновить",
+        style=discord.ButtonStyle.secondary,
+        custom_id="famq_staff_panel_refresh",
+    )
+    async def refresh(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
+        if interaction.guild is None or interaction.guild.id != FAMQ_GUILD_ID:
+            await interaction.response.send_message("Эта кнопка доступна только на сервере ASIXEZ.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+        await ensure_guild_members_loaded(interaction.guild)
+        if interaction.message is not None:
+            await interaction.message.edit(embed=build_staff_panel_embed(interaction.guild), view=StaffPanelView())
+        await interaction.followup.send("Состав обновлён.", ephemeral=True)
 
 
 def get_required_nickname_prefix(member: discord.Member) -> str | None:
@@ -3440,7 +3464,7 @@ class RejectModal(discord.ui.Modal):
         if not app:
             await interaction.response.send_message("Заявка не найдена.", ephemeral=True)
             return
-        if interaction.guild is None or not can_manage_application(member, app.get("server", FAMQ_SERVER_DETROIT), int(app.get("guildId", interaction.guild.id))):
+        if interaction.guild is None or not can_manage_application(member, app.get("server", FAMQ_SERVER_DENVER), int(app.get("guildId", interaction.guild.id))):
             await interaction.response.send_message("Недостаточно прав.", ephemeral=True)
             return
 
@@ -3980,7 +4004,7 @@ async def lock_application_channel_to_recruiter(
 
     recruiter_role_ids = set(
         get_server_recruiter_roles(
-            application.get("server", FAMQ_SERVER_DETROIT),
+            application.get("server", FAMQ_SERVER_DENVER),
             int(application.get("guildId", guild.id)),
         )
     )
@@ -4098,7 +4122,7 @@ class RecruiterActionView(discord.ui.View):
             await interaction.response.send_message("Сервер не найден.", ephemeral=True)
             return None
 
-        if not can_manage_application(member, app.get("server", FAMQ_SERVER_DETROIT), interaction.guild.id):
+        if not can_manage_application(member, app.get("server", FAMQ_SERVER_DENVER), interaction.guild.id):
             await interaction.response.send_message("Эта кнопка доступна только назначенным ролям этого сервера.", ephemeral=True)
             return None
 
@@ -4215,7 +4239,7 @@ class RecruiterActionView(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True)
         await lock_application_channel_to_recruiter(interaction.guild, app)
-        accept_role_id = get_server_accept_role_id(app.get("server", FAMQ_SERVER_DETROIT), int(app.get("guildId", interaction.guild.id)))
+        accept_role_id = get_server_accept_role_id(app.get("server", FAMQ_SERVER_DENVER), int(app.get("guildId", interaction.guild.id)))
         member = interaction.guild.get_member(int(app["applicantId"]))
         if member is None:
             try:
@@ -4334,7 +4358,7 @@ class CallSelectView(discord.ui.View):
         if not app:
             await interaction.response.send_message("Заявка не найдена.", ephemeral=True)
             return
-        if interaction.guild is None or not can_manage_application(member, app.get("server", FAMQ_SERVER_DETROIT), int(app.get("guildId", interaction.guild.id))):
+        if interaction.guild is None or not can_manage_application(member, app.get("server", FAMQ_SERVER_DENVER), int(app.get("guildId", interaction.guild.id))):
             await interaction.response.send_message("Недостаточно прав.", ephemeral=True)
             return
         claimed_by = int(app.get("claimedBy") or 0)
@@ -4568,7 +4592,7 @@ async def publish_staff_panel(guild: discord.Guild) -> bool:
 
     try:
         await cleanup_bot_messages(channel)
-        await channel.send(embed=build_staff_panel_embed(guild))
+        await channel.send(embed=build_staff_panel_embed(guild), view=StaffPanelView())
         console_log(f"Staff panel published to {channel.id}")
         return True
     except Exception as error:
@@ -4644,11 +4668,17 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
     stored = panel_store.get(get_project_panel_key(PANEL_KEY, guild.id), {})
     if not force_recreate and stored.get("messageId"):
         try:
-            if PANEL_BANNER_URL and stored.get("imageMessageId"):
-                banner_message = await channel.fetch_message(int(stored["imageMessageId"]))
-                banner_embed = make_embed(color=COLOR_PANEL)
-                banner_embed.set_image(url=PANEL_BANNER_URL)
-                await banner_message.edit(embed=banner_embed)
+            # Старый вариант панели отправлял баннер отдельным сообщением сверху.
+            # Удаляем его при первом обновлении, потому что теперь он внизу эмбэда.
+            if stored.get("imageMessageId"):
+                try:
+                    banner_message = await channel.fetch_message(int(stored["imageMessageId"]))
+                    await delete_message_safely(banner_message)
+                except Exception:
+                    pass
+                stored.pop("imageMessageId", None)
+                panel_store[get_project_panel_key(PANEL_KEY, guild.id)] = stored
+                save_panels()
             panel_message = await channel.fetch_message(int(stored["messageId"]))
             await panel_message.edit(embed=build_panel_embed(guild.id), view=FamqPanelView(guild.id))
             return False
@@ -4665,14 +4695,8 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
         except Exception:
             pass
 
-    image_message = None
-    if PANEL_BANNER_URL:
-        banner_embed = make_embed(color=COLOR_PANEL)
-        banner_embed.set_image(url=PANEL_BANNER_URL)
-        image_message = await channel.send(embed=banner_embed)
     panel_message = await channel.send(embed=build_panel_embed(guild.id), view=FamqPanelView(guild.id))
     panel_store[get_project_panel_key(PANEL_KEY, guild.id)] = {
-        "imageMessageId": image_message.id if image_message is not None else 0,
         "messageId": panel_message.id,
         "channelId": channel.id,
     }
@@ -5118,14 +5142,13 @@ async def giveaway_command(interaction: discord.Interaction) -> None:
 
 @bot.tree.command(
     name="application_toggle",
-    description="Открыть или закрыть набор заявок (Detroit). Доступно только роли 1467068877572800720.",
+    description="Открыть или закрыть набор заявок на Denver. Доступно только роли 1467068877572800720.",
 )
-@app_commands.guilds(*GUILD_SCOPES)
-@app_commands.default_permissions(manage_guild=True)
+@app_commands.guilds(discord.Object(id=FAMQ_GUILD_ID))
 @app_commands.describe(action="Выберите действие: open или close")
 async def application_toggle(interaction: discord.Interaction, action: str) -> None:
-    if interaction.guild is None:
-        await interaction.response.send_message("Команда доступна только на сервере.", ephemeral=True)
+    if interaction.guild is None or interaction.guild.id != FAMQ_GUILD_ID:
+        await interaction.response.send_message("Команда доступна только на сервере ASIXEZ.", ephemeral=True)
         return
 
     member = interaction.user if isinstance(interaction.user, discord.Member) else None
@@ -5133,7 +5156,7 @@ async def application_toggle(interaction: discord.Interaction, action: str) -> N
         await interaction.response.send_message("У вас нет прав для использования этой команды.", ephemeral=True)
         return
 
-    server = FAMQ_SERVER_DETROIT
+    server = FAMQ_SERVER_DENVER
     if action.lower() not in ("open", "close"):
         await interaction.response.send_message("Действие должно быть 'open' или 'close'.", ephemeral=True)
         return
@@ -5144,7 +5167,7 @@ async def application_toggle(interaction: discord.Interaction, action: str) -> N
     await announce_application_state_change(interaction.guild, server, is_open)
 
     status = "открыт" if is_open else "закрыт"
-    await interaction.response.send_message(f"Набор на сервер Detroit {status}.", ephemeral=True)
+    await interaction.response.send_message(f"Набор на сервер Denver {status}.", ephemeral=True)
 
 
 async def restore_persistent_views() -> None:
@@ -5157,6 +5180,7 @@ async def restore_persistent_views() -> None:
         message_id = stored.get("messageId")
         if message_id:
             bot.add_view(FamqPanelView(guild_id), message_id=int(message_id))
+    bot.add_view(StaffPanelView())
     bot.add_view(VoiceRoomControlView())
     bot.add_view(NicknameSelfFixView())
     reload_applications()
