@@ -1,6 +1,8 @@
 import re
 from typing import Any
 
+import discord
+
 
 def trim_text(value: str, limit: int) -> str:
     if len(value) <= limit:
@@ -52,3 +54,70 @@ def build_asx_member_nickname(application: dict[str, Any]) -> str:
     suffix = f" | {static_value}"
     max_name_length = max(1, 32 - len("ASX | ") - len(suffix))
     return f"ASX | {irl_name[:max_name_length]}{suffix}"[:32]
+
+
+# --- Новая функция для построения эмбеда заявки с полями (широкий вид) ---
+def build_application_embed(application: dict[str, Any], applicant_tag: str, color: int = 0x090D14) -> discord.Embed:
+    """
+    Создаёт эмбед заявки в широком формате (поля, без цитирования).
+    """
+    embed = discord.Embed(
+        title=f"Заявка #{application['id']}",
+        color=color,
+        timestamp=parse_iso(application.get("submittedAt")),
+    )
+    embed.set_author(name=applicant_tag)
+    embed.set_footer(text=f"ID заявителя: {application['applicantId']}")
+
+    # Основные поля
+    embed.add_field(name="Заявитель", value=f"<@{application['applicantId']}>", inline=False)
+    embed.add_field(name="Сервер", value=get_server_plain_label(application.get("server", "")), inline=False)
+
+    # Поля анкеты
+    fields_map = {
+        "01. Имя IRL": application.get("irlName") or extract_legacy_irl_name(application.get("nameAge", "")) or "—",
+        "02. Возраст IRL": application.get("ageIrl") or application.get("nameAge") or "—",
+        "03. Левел, онлайн и часовой пояс": application.get("levelOnline") or "—",
+        "04. Фракция": application.get("fraction") or "—",
+        "05. Ник и Static-ID": application.get("nameStatic") or "—",
+    }
+    for label, value in fields_map.items():
+        embed.add_field(name=label, value=value, inline=False)
+
+    # Если заявка закреплена за рекрутером
+    if application.get("claimedBy"):
+        embed.add_field(name="Закреплена за", value=f"<@{application['claimedBy']}>", inline=False)
+
+    return embed
+
+
+# Вспомогательная функция (нужна для парсинга даты)
+def parse_iso(value: str | None):
+    from datetime import datetime, timezone
+    if not value:
+        return datetime.now(timezone.utc)
+    normalized = value.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(normalized)
+    except ValueError:
+        return datetime.now(timezone.utc)
+
+
+# Вспомогательная функция для получения названия сервера (копия из index, чтобы не импортировать)
+def get_server_plain_label(server: str) -> str:
+    from config import (
+        FAMQ_SERVER_FRIEND_VERIFICATION,
+        FEDRU_APPLICATION_SERVER,
+        FAMQ_SERVER_DENVER,
+        FAMQ_SERVER_ORLANDO,
+        FAMQ_SERVER_SF,
+    )
+    if server == FAMQ_SERVER_FRIEND_VERIFICATION:
+        return "Верификация для друзей"
+    if server == FEDRU_APPLICATION_SERVER:
+        return "ASIXEZ RU"
+    if server == FAMQ_SERVER_DENVER:
+        return "Denver"
+    if server == FAMQ_SERVER_ORLANDO:
+        return "Orlando"
+    return "San Francisco" if server == FAMQ_SERVER_SF else "Detroit"
