@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import os
 import random
 import re
@@ -31,7 +31,6 @@ def console_log(message: str) -> None:
     level = logger.error if any(word in message.lower() for word in ("failed", "error", "skipped")) else logger.info
     level(message)
     sys.stdout.write(f"{message}\n")
-
 
 
 FAMQ_FLEET = [
@@ -108,8 +107,6 @@ FAMQ_FLEET = [
         "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1488564435839746138/image.png?ex=69cd3d29&is=69cbeba9&hm=2f53326ce184591e7c7c035e51170b542bb47e5edfed8f0a36f8cc14cc487519&",
     },
 ]
-
-
 
 storage = BotStorage(
     applications_file=APPLICATIONS_FILE,
@@ -445,8 +442,6 @@ async def detect_leave_reason(guild: discord.Guild, user_id: int) -> tuple[str, 
     if entry is not None:
         return "kick", actor.id if actor is not None else None, entry.reason
     return "left", None, None
-
-
 def get_voice_rooms() -> dict[str, dict[str, Any]]:
     rooms = voice_room_store.get("rooms", {})
     if not isinstance(rooms, dict):
@@ -808,7 +803,7 @@ def set_application_open(server: str, guild_id: int, is_open: bool) -> None:
 def can_manage_application(member: discord.Member | None, server: str, guild_id: int | None = None) -> bool:
     if member is None:
         return False
-    return member_has_any_role(member, get_server_recruiter_roles(server, guild_id or member.guild.id))
+    return member_has_any_role(member, get_server_manager_roles(server, guild_id or member.guild.id))
 
 
 async def notify_unwhitelisted_guild(guild: discord.Guild) -> None:
@@ -855,8 +850,6 @@ spam_action_cache: dict[tuple[int, int], float] = {}
 kick_restriction_cache: dict[tuple[int, int], dict[str, Any]] = {}
 join_alert_state: dict[int, dict[str, float]] = {}
 application_action_locks: dict[int, asyncio.Lock] = {}
-
-
 def build_panel_embed(guild_id: int) -> discord.Embed:
     project = get_project(guild_id)
     visible_options = get_visible_application_options(guild_id)
@@ -922,52 +915,6 @@ def build_voice_panel_embed() -> discord.Embed:
     return embed
 
 
-def build_application_embed(application: dict[str, Any], applicant_tag: str) -> discord.Embed:
-    if is_friend_verification_application(application["server"]):
-        status_line = ""
-        if application.get("claimedBy"):
-            status_line = f"\n\n**Заявка закреплена за:** <@{application['claimedBy']}>"
-        embed = make_embed(
-            title=f"Верификация для друзей #{application['id']}",
-            description="\n\n".join(
-                [
-                    f"{EMOJI_REVIEW_TEXT} **Заявитель:** {applicant_tag}",
-                    f"{EMOJI_FRIEND_TEXT} **Тип:** {get_server_label(application['server'])}",
-                    build_answer_block("01. Ваше имя, фамилия в игре", application.get("friendNameGame") or "—"),
-                    build_answer_block("02. В какой семье вы состоите?", application.get("friendFamily") or "—"),
-                ]
-            )
-            + status_line,
-            color=COLOR_PANEL,
-            timestamp=parse_iso(application.get("submittedAt")),
-        )
-        embed.set_footer(text=f"ID заявителя: {application['applicantId']}")
-        return embed
-
-    status_line = ""
-    if application.get("claimedBy"):
-        status_line = f"\n\n**Заявка закреплена за:** <@{application['claimedBy']}>"
-    embed = make_embed(
-        title=f"Заявка #{application['id']}",
-        description="\n\n".join(
-            [
-                f"{EMOJI_REVIEW_TEXT} **Заявитель:** {applicant_tag}",
-                f"{get_server_label(application['server'])} **Сервер:** {get_server_plain_label(application['server'])}",
-                build_answer_block("01. Имя IRL", application.get("irlName") or extract_legacy_irl_name(application.get("nameAge", "")) or "—"),
-                build_answer_block("02. Возраст IRL", application.get("ageIrl") or application.get("nameAge") or "—"),
-                build_answer_block("03. Левел, онлайн и часовой пояс", application.get("levelOnline") or "—"),
-                build_answer_block("04. Фракция", application.get("fraction") or "—"),
-                build_answer_block("05. Ник и Static-ID", application.get("nameStatic") or "—"),
-            ]
-        )
-        + status_line,
-        color=COLOR_PANEL,
-        timestamp=parse_iso(application.get("submittedAt")),
-        )
-    embed.set_footer(text=f"ID заявителя: {application['applicantId']}")
-    return embed
-
-
 def build_dm_embed(title: str, description: str) -> discord.Embed:
     return make_embed(
         title=title,
@@ -978,37 +925,35 @@ def build_dm_embed(title: str, description: str) -> discord.Embed:
     )
 
 
-STAFF_ROLE_GROUPS: tuple[tuple[str, int, str], ...] = (
-    ("Leaders", FAMQ_FRIEND_VERIFY_ROLE_1_ID, EMOJI_ACCEPT_TEXT),
-    ("Dep Leaders", FAMQ_DEP_LEADER_ROLE_ID, EMOJI_REVIEW_TEXT),
-    ("Curators", FAMQ_CURATOR_ROLE_ID, EMOJI_CALL_TEXT),
-    ("Boss Famq", FAMQ_BOSS_ROLE_ID, EMOJI_DETROIT_TEXT),
-    ("High Famq", FAMQ_HIGH_ROLE_ID, EMOJI_SF_TEXT),
-    ("Recruits", FAMQ_RECRUITER_ROLE_ID, EMOJI_ORLANDO_TEXT),
-)
-
-NICKNAME_RULES: tuple[tuple[int, str], ...] = (
-    (FAMQ_DEP_LEADER_ROLE_ID, "Dep"),
-    (FAMQ_CURATOR_ROLE_ID, "Curator"),
-    (FAMQ_BOSS_ROLE_ID, "Boss"),
-    (FAMQ_HIGH_ROLE_ID, "High"),
-    (FAMQ_RECRUITER_ROLE_ID, "Rec"),
-    (APPLICATION_EXTRA_ACCEPT_ROLE_ID, "ASX"),
-)
-
-
-def format_member_mentions_for_role(guild: discord.Guild, role_id: int) -> str:
-    role = guild.get_role(int(role_id))
-    if role is None:
-        return "`роль не найдена`"
-    members = sorted([member for member in role.members if not member.bot], key=lambda member: member.display_name.lower())
-    if not members:
-        return "—"
-    lines = [f"- {member.mention}" for member in members]
-    return trim_embed_text("\n".join(lines), limit=1024)
-
-
+# ---- Изменённая функция build_staff_panel_embed ----
 def build_staff_panel_embed(guild: discord.Guild) -> discord.Embed:
+    # Определяем порядок ролей от высшей к низшей с новыми ролями
+    role_groups = (
+        ("Chief Recruit", CHIEF_RECRUIT_ROLE_ID, EMOJI_ACCEPT_TEXT),
+        ("Dep Chief Recruit", DEP_CHIEF_RECRUIT_ROLE_ID, EMOJI_REVIEW_TEXT),
+        ("Boss Famq", FAMQ_BOSS_ROLE_ID, EMOJI_DETROIT_TEXT),
+        ("High Famq", FAMQ_HIGH_ROLE_ID, EMOJI_SF_TEXT),
+        ("Curators", FAMQ_CURATOR_ROLE_ID, EMOJI_CALL_TEXT),
+        ("Dep Leaders", FAMQ_DEP_LEADER_ROLE_ID, EMOJI_REVIEW_TEXT),
+        ("Leaders", FAMQ_FRIEND_VERIFY_ROLE_1_ID, EMOJI_ACCEPT_TEXT),
+        ("Recruits", FAMQ_RECRUITER_ROLE_ID, EMOJI_ORLANDO_TEXT),
+    )
+
+    # Собираем участников, назначая каждому только его высшую роль из списка
+    members_by_role = {role_id: set() for _, role_id, _ in role_groups}
+    for member in guild.members:
+        if member.bot:
+            continue
+        highest_role = None
+        highest_pos = -1
+        for _, role_id, _ in role_groups:
+            role = guild.get_role(role_id)
+            if role and role in member.roles and role.position > highest_pos:
+                highest_pos = role.position
+                highest_role = role_id
+        if highest_role is not None:
+            members_by_role[highest_role].add(member)
+
     embed = make_embed(
         title=f"{EMOJI_ACCEPT_TEXT} Состав семьи ASIXEZ",
         description=(
@@ -1018,12 +963,20 @@ def build_staff_panel_embed(guild: discord.Guild) -> discord.Embed:
         color=COLOR_PANEL,
         timestamp=datetime.now(timezone.utc),
     )
-    for title, role_id, emoji_text in STAFF_ROLE_GROUPS:
+
+    for title, role_id, emoji_text in role_groups:
+        members = sorted(members_by_role.get(role_id, []), key=lambda m: m.display_name.lower())
+        if not members:
+            value = "—"
+        else:
+            value = "\n".join(f"- {m.mention}" for m in members)
+            value = trim_embed_text(value, limit=1024)
         embed.add_field(
             name=f"{emoji_text} {title}",
-            value=format_member_mentions_for_role(guild, role_id),
+            value=value,
             inline=False,
         )
+
     embed.set_footer(text=f"ASIXEZ • обновлено {format_log_time_msk()}")
     return embed
 
@@ -1103,6 +1056,7 @@ def build_log_embed(description: str) -> discord.Embed:
         color=COLOR,
         timestamp=datetime.now(timezone.utc),
     )
+
 def build_log_embed_for_guild(guild_id: int, description: str) -> discord.Embed:
     project = get_project(guild_id)
     if project is None:
@@ -1725,8 +1679,6 @@ def build_contract_embeds() -> list[discord.Embed]:
     )
 
     return [intro, listing, details1, details2]
-
-
 def build_fleet_embeds() -> list[discord.Embed]:
     embeds: list[discord.Embed] = []
     for car in FAMQ_FLEET:
@@ -2373,8 +2325,6 @@ async def maybe_timeout_admin_actor(
         ],
         ping_alert_role=True,
     )
-
-
 async def post_result(
     guild: discord.Guild,
     app: dict[str, Any],
@@ -2573,11 +2523,18 @@ async def send_famq_welcome_message(member: discord.Member) -> None:
         timestamp=datetime.now(timezone.utc),
     )
     embed.set_thumbnail(url=member.display_avatar.url)
+
+    # Отправляем основное сообщение с аватаркой
     await channel.send(
         embed=embed,
         view=CopyDiscordIdView(member.id),
         allowed_mentions=discord.AllowedMentions(users=True),
     )
+    # Отдельное сообщение с баннером (п.10)
+    if WELCOME_BANNER_URL:
+        banner_embed = discord.Embed(color=COLOR)
+        banner_embed.set_image(url=WELCOME_BANNER_URL)
+        await channel.send(embed=banner_embed)
 
 
 async def send_famq_leave_message(member: discord.Member) -> None:
@@ -2615,7 +2572,14 @@ def get_next_restart_datetime(now: datetime | None = None) -> datetime:
         current = current.replace(tzinfo=MSK_TZ)
     else:
         current = current.astimezone(MSK_TZ)
-    return current + timedelta(hours=3)
+    # Реализуем корректный расчёт по часам RESTART_HOURS_MSK
+    candidates = []
+    for hour in RESTART_HOURS_MSK:
+        candidate = current.replace(hour=hour, minute=0, second=0, microsecond=0)
+        if candidate <= current:
+            candidate += timedelta(days=1)
+        candidates.append(candidate)
+    return min(candidates)
 
 
 async def restart_process_later() -> None:
@@ -2812,6 +2776,7 @@ async def cleanup_stale_voice_rooms(guild: discord.Guild) -> None:
 
     for channel_id in stale_ids:
         remove_voice_room(channel_id)
+
 
 async def finish_giveaway(giveaway_id: int) -> None:
     try:
@@ -3062,6 +3027,85 @@ class GiveawayModal(discord.ui.Modal, title="Создание розыгрыша
         await interaction.followup.send(f"Розыгрыш #{giveaway_id} опубликован в <#{channel.id}>.", ephemeral=True)
 
 
+# --- Изменённый FamqPanelView (для одной кнопки) ---
+class FamqPanelView(discord.ui.View):
+    def __init__(self, guild_id: int):
+        super().__init__(timeout=None)
+        self.guild_id = guild_id
+        project = get_project(guild_id)
+        if project is None:
+            return
+
+        # Для основного сервера (FAMQ) показываем только одну кнопку (без выбора)
+        if guild_id == FAMQ_GUILD_ID:
+            button = discord.ui.Button(
+                custom_id=f"famq_apply_{guild_id}",
+                label="Подать заявку",
+                style=discord.ButtonStyle.secondary,
+            )
+            button.callback = self.apply_single_callback
+            self.add_item(button)
+        else:
+            # Для других серверов (например, FEDRU) оставляем старую логику
+            visible_options = get_visible_application_options(guild_id)
+            if not visible_options:
+                self.add_item(
+                    discord.ui.Button(
+                        custom_id=f"famq_apply_closed_{guild_id}",
+                        label="Набор временно закрыт",
+                        style=discord.ButtonStyle.secondary,
+                        disabled=True,
+                    )
+                )
+            elif len(visible_options) <= 1:
+                apply_button = discord.ui.Button(
+                    custom_id=f"famq_apply_{guild_id}",
+                    label="Подать заявку",
+                    style=discord.ButtonStyle.secondary,
+                )
+                apply_button.callback = self.apply_callback
+                self.add_item(apply_button)
+            else:
+                select = discord.ui.Select(
+                    custom_id=f"{PANEL_SELECT_ID}_{guild_id}",
+                    placeholder="Выберите сервер или верификацию",
+                    min_values=1,
+                    max_values=1,
+                    options=[
+                        discord.SelectOption(
+                            label=option["label"],
+                            value=option["key"],
+                            description="Открытая подача анкеты",
+                        )
+                        for option in visible_options
+                    ],
+                )
+                select.callback = self.select_callback
+                self.add_item(select)
+
+    async def apply_single_callback(self, interaction: discord.Interaction) -> None:
+        # Подаём заявку на Detroit (единственная опция)
+        options = get_visible_application_options(self.guild_id)
+        if not options:
+            await interaction.response.send_message("Подача заявок сейчас недоступна.", ephemeral=True)
+            return
+        await show_application_modal(interaction, options[0]["key"], self.guild_id)
+
+    async def select_callback(self, interaction: discord.Interaction) -> None:
+        selected = self.children[0]
+        if not isinstance(selected, discord.ui.Select) or not selected.values:
+            await interaction.response.send_message("Не удалось определить сервер.", ephemeral=True)
+            return
+        await show_application_modal(interaction, selected.values[0], self.guild_id)
+
+    async def apply_callback(self, interaction: discord.Interaction) -> None:
+        options = get_visible_application_options(self.guild_id)
+        if not options:
+            await interaction.response.send_message("Подача заявок сейчас недоступна.", ephemeral=True)
+            return
+        await show_application_modal(interaction, options[0]["key"], self.guild_id)
+
+
 class ApplicationModal(discord.ui.Modal):
     def __init__(self, server: str):
         title = f"Заявка — {get_server_plain_label(server)}"
@@ -3184,7 +3228,7 @@ class ApplicationModal(discord.ui.Modal):
             "applicationMessageId": "",
         }
 
-        ping_content = build_application_ping_content(interaction.user.id)
+        ping_content = build_application_ping_content(interaction.user.id, recruiter_roles)
         app_message = await application_channel.send(
             content=ping_content,
             embed=build_application_embed(application, interaction.user.name),
@@ -3372,11 +3416,12 @@ class RejectModal(discord.ui.Modal):
                 return
             claimed_by = int(app.get("claimedBy") or 0)
             if claimed_by not in {0, interaction.user.id}:
-                await interaction.response.send_message(
-                    f"Эта заявка уже закреплена за рекрутером <@{claimed_by}>.",
-                    ephemeral=True,
-                )
-                return
+                # Разрешаем даже если заявка взята, если у пользователя есть Chief/Dep Chief
+                if not member_has_any_role(member, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                    await interaction.response.send_message(
+                        f"Эта заявка уже закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                    )
+                    return
 
             app["claimedBy"] = interaction.user.id
             app["claimedAt"] = datetime.now(timezone.utc).isoformat()
@@ -3427,7 +3472,7 @@ class RejectModal(discord.ui.Modal):
         )
         application_action_locks.pop(self.app_id, None)
         asyncio.create_task(delete_channel_later(int(app["channelId"]), "Заявка FAMQ отклонена"))
-
+# --- VoiceRoomUserModal и другие модалки для голосовых комнат ---
 
 class VoiceRoomUserModal(discord.ui.Modal):
     def __init__(self, action: str):
@@ -3738,6 +3783,9 @@ class VoiceRoomControlView(discord.ui.View):
             return
         await interaction.response.send_modal(VoiceRoomUserModal("access"))
 
+
+# --- Вспомогательные функции для заявок ---
+
 def get_application_lock(app_id: int) -> asyncio.Lock:
     lock = application_action_locks.get(app_id)
     if lock is None:
@@ -3961,62 +4009,7 @@ async def show_application_modal(
     await interaction.response.send_modal(ApplicationModal(server))
 
 
-class FamqPanelView(discord.ui.View):
-    def __init__(self, guild_id: int):
-        super().__init__(timeout=None)
-        self.guild_id = guild_id
-        project = get_project(guild_id)
-        visible_options = get_visible_application_options(guild_id)
-
-        if not visible_options:
-            self.add_item(
-                discord.ui.Button(
-                    custom_id=f"famq_apply_closed_{guild_id}",
-                    label="Набор временно закрыт",
-                    style=discord.ButtonStyle.secondary,
-                    disabled=True,
-                )
-            )
-        elif len(visible_options) <= 1:
-            apply_button = discord.ui.Button(
-                custom_id=f"famq_apply_{guild_id}",
-                label="Подать заявку",
-                style=discord.ButtonStyle.secondary,
-            )
-            apply_button.callback = self.apply_callback
-            self.add_item(apply_button)
-        else:
-            select = discord.ui.Select(
-                custom_id=f"{PANEL_SELECT_ID}_{guild_id}",
-                placeholder="Выберите сервер или верификацию",
-                min_values=1,
-                max_values=1,
-                options=[
-                    discord.SelectOption(
-                        label=option["label"],
-                        value=option["key"],
-                        description="Открытая подача анкеты",
-                    )
-                    for option in visible_options
-                ],
-            )
-            select.callback = self.select_callback
-            self.add_item(select)
-
-    async def select_callback(self, interaction: discord.Interaction) -> None:
-        selected = self.children[0]
-        if not isinstance(selected, discord.ui.Select) or not selected.values:
-            await interaction.response.send_message("Не удалось определить сервер.", ephemeral=True)
-            return
-        await show_application_modal(interaction, selected.values[0], self.guild_id)
-
-    async def apply_callback(self, interaction: discord.Interaction) -> None:
-        options = get_visible_application_options(self.guild_id)
-        if not options:
-            await interaction.response.send_message("Подача заявок сейчас недоступна.", ephemeral=True)
-            return
-        await show_application_modal(interaction, options[0]["key"], self.guild_id)
-
+# --- Изменённый RecruiterActionView (с учётом новых ролей) ---
 
 class RecruiterActionView(discord.ui.View):
     def __init__(self, app_id: int, disabled: bool = False):
@@ -4066,14 +4059,25 @@ class RecruiterActionView(discord.ui.View):
         if not app:
             await interaction.response.send_message("Заявка не найдена.", ephemeral=True)
             return None
-        if interaction.guild is None or not can_manage_application(member, app.get("server", FAMQ_SERVER_DETROIT), int(app.get("guildId", interaction.guild.id))):
+        if interaction.guild is None:
+            await interaction.response.send_message("Сервер не найден.", ephemeral=True)
+            return None
+
+        # Проверяем, может ли пользователь управлять заявкой (по ролям)
+        if not can_manage_application(member, app.get("server", FAMQ_SERVER_DETROIT), interaction.guild.id):
             await interaction.response.send_message("Эта кнопка доступна только назначенным ролям этого сервера.", ephemeral=True)
             return None
-        return app
 
-    def _claimed_by_other(self, app: dict[str, Any], user_id: int) -> bool:
+        # Если заявка уже закреплена за другим, но пользователь имеет роль Chief Recruit или Dep Chief Recruit – разрешаем
         claimed_by = int(app.get("claimedBy") or 0)
-        return claimed_by not in {0, user_id}
+        if claimed_by not in {0, interaction.user.id}:
+            if not member_has_any_role(member, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                await interaction.response.send_message(
+                    f"Эта заявка уже закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                )
+                return None
+
+        return app
 
     async def review_callback(self, interaction: discord.Interaction) -> None:
         app = await self._guard(interaction)
@@ -4088,12 +4092,14 @@ class RecruiterActionView(discord.ui.View):
             if app.get("status") in {"accepted", "rejected"}:
                 await interaction.response.send_message("Заявка уже обработана.", ephemeral=True)
                 return
-            if self._claimed_by_other(app, interaction.user.id):
-                await interaction.response.send_message(
-                    f"Эта заявка уже закреплена за рекрутером <@{app['claimedBy']}>.",
-                    ephemeral=True,
-                )
-                return
+            # Проверяем, не закреплена ли за другим (но с учётом новых ролей)
+            claimed_by = int(app.get("claimedBy") or 0)
+            if claimed_by not in {0, interaction.user.id}:
+                if not member_has_any_role(interaction.user, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                    await interaction.response.send_message(
+                        f"Эта заявка уже закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                    )
+                    return
 
             app["claimedBy"] = interaction.user.id
             app["claimedAt"] = datetime.now(timezone.utc).isoformat()
@@ -4120,12 +4126,15 @@ class RecruiterActionView(discord.ui.View):
         app = await self._guard(interaction)
         if app is None:
             return
-        if self._claimed_by_other(app, interaction.user.id):
-            await interaction.response.send_message(
-                f"Заявка закреплена за рекрутером <@{app['claimedBy']}>.",
-                ephemeral=True,
-            )
-            return
+        # Проверка на закрепление (с учётом новых ролей)
+        claimed_by = int(app.get("claimedBy") or 0)
+        if claimed_by not in {0, interaction.user.id}:
+            if not member_has_any_role(interaction.user, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                await interaction.response.send_message(
+                    f"Заявка закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                )
+                return
+
         if not int(app.get("claimedBy") or 0):
             app["claimedBy"] = interaction.user.id
             app["claimedAt"] = datetime.now(timezone.utc).isoformat()
@@ -4157,12 +4166,13 @@ class RecruiterActionView(discord.ui.View):
             if app.get("status") in {"accepted", "rejected"}:
                 await interaction.response.send_message("Заявка уже обработана.", ephemeral=True)
                 return
-            if self._claimed_by_other(app, interaction.user.id):
-                await interaction.response.send_message(
-                    f"Эта заявка уже закреплена за рекрутером <@{app['claimedBy']}>.",
-                    ephemeral=True,
-                )
-                return
+            claimed_by = int(app.get("claimedBy") or 0)
+            if claimed_by not in {0, interaction.user.id}:
+                if not member_has_any_role(interaction.user, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                    await interaction.response.send_message(
+                        f"Эта заявка уже закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                    )
+                    return
 
             app["claimedBy"] = interaction.user.id
             app["claimedAt"] = datetime.now(timezone.utc).isoformat()
@@ -4249,12 +4259,13 @@ class RecruiterActionView(discord.ui.View):
         if app.get("status") in {"accepted", "rejected"}:
             await interaction.response.send_message("Заявка уже обработана.", ephemeral=True)
             return
-        if self._claimed_by_other(app, interaction.user.id):
-            await interaction.response.send_message(
-                f"Эта заявка уже закреплена за рекрутером <@{app['claimedBy']}>.",
-                ephemeral=True,
-            )
-            return
+        claimed_by = int(app.get("claimedBy") or 0)
+        if claimed_by not in {0, interaction.user.id}:
+            if not member_has_any_role(interaction.user, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                await interaction.response.send_message(
+                    f"Эта заявка уже закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                )
+                return
         await interaction.response.send_modal(RejectModal(self.app_id))
 
 
@@ -4297,11 +4308,11 @@ class CallSelectView(discord.ui.View):
             return
         claimed_by = int(app.get("claimedBy") or 0)
         if claimed_by not in {0, interaction.user.id}:
-            await interaction.response.send_message(
-                f"Эта заявка закреплена за рекрутером <@{claimed_by}>.",
-                ephemeral=True,
-            )
-            return
+            if not member_has_any_role(member, [CHIEF_RECRUIT_ROLE_ID, DEP_CHIEF_RECRUIT_ROLE_ID]):
+                await interaction.response.send_message(
+                    f"Эта заявка закреплена за рекрутером <@{claimed_by}>.", ephemeral=True
+                )
+                return
 
         selected_channel_id = int(selected.values[0])
         project = get_project(int(app.get("guildId", interaction.guild.id)))
@@ -4509,7 +4520,7 @@ async def ensure_guild_members_loaded(guild: discord.Guild) -> None:
     try:
         await asyncio.wait_for(guild.chunk(cache=True), timeout=15)
     except Exception as error:
-        console_log(f"Member chunk skipped for guild {guild.id}: {error}")
+        console_log(f"Member chunk skipped for guild {guild.id}: {error!r}")
 
 
 async def publish_staff_panel(guild: discord.Guild) -> bool:
@@ -4602,10 +4613,10 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
     stored = panel_store.get(get_project_panel_key(PANEL_KEY, guild.id), {})
     if not force_recreate and stored.get("messageId"):
         try:
-            if FAMILY_BRAND_BANNER_URL and stored.get("imageMessageId"):
+            if PANEL_BANNER_URL and stored.get("imageMessageId"):
                 banner_message = await channel.fetch_message(int(stored["imageMessageId"]))
                 banner_embed = make_embed(color=COLOR_PANEL)
-                banner_embed.set_image(url=FAMILY_BRAND_BANNER_URL)
+                banner_embed.set_image(url=PANEL_BANNER_URL)
                 await banner_message.edit(embed=banner_embed)
             panel_message = await channel.fetch_message(int(stored["messageId"]))
             await panel_message.edit(embed=build_panel_embed(guild.id), view=FamqPanelView(guild.id))
@@ -4624,9 +4635,9 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
             pass
 
     image_message = None
-    if FAMILY_BRAND_BANNER_URL:
+    if PANEL_BANNER_URL:
         banner_embed = make_embed(color=COLOR_PANEL)
-        banner_embed.set_image(url=FAMILY_BRAND_BANNER_URL)
+        banner_embed.set_image(url=PANEL_BANNER_URL)
         image_message = await channel.send(embed=banner_embed)
     panel_message = await channel.send(embed=build_panel_embed(guild.id), view=FamqPanelView(guild.id))
     panel_store[get_project_panel_key(PANEL_KEY, guild.id)] = {
@@ -5074,6 +5085,39 @@ async def giveaway_command(interaction: discord.Interaction) -> None:
     await interaction.response.send_modal(GiveawayModal())
 
 
+# --- Новая слэш-команда /application_toggle ---
+
+@bot.tree.command(
+    name="application_toggle",
+    description="Открыть или закрыть набор заявок (Detroit). Доступно только роли 1467068877572800720.",
+)
+@app_commands.guilds(*GUILD_SCOPES)
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.describe(action="Выберите действие: open или close")
+async def application_toggle(interaction: discord.Interaction, action: str) -> None:
+    if interaction.guild is None:
+        await interaction.response.send_message("Команда доступна только на сервере.", ephemeral=True)
+        return
+
+    member = interaction.user if isinstance(interaction.user, discord.Member) else None
+    if member is None or not member_has_any_role(member, [1467068877572800720]):
+        await interaction.response.send_message("У вас нет прав для использования этой команды.", ephemeral=True)
+        return
+
+    server = FAMQ_SERVER_DETROIT
+    if action.lower() not in ("open", "close"):
+        await interaction.response.send_message("Действие должно быть 'open' или 'close'.", ephemeral=True)
+        return
+
+    is_open = action.lower() == "open"
+    set_application_open(server, interaction.guild.id, is_open)
+    await create_or_update_main_panel(interaction.guild, force_recreate=False)
+    await announce_application_state_change(interaction.guild, server, is_open)
+
+    status = "открыт" if is_open else "закрыт"
+    await interaction.response.send_message(f"Набор на сервер Detroit {status}.", ephemeral=True)
+
+
 async def restore_persistent_views() -> None:
     global views_restored
     if views_restored:
@@ -5108,6 +5152,8 @@ async def restore_persistent_views() -> None:
 
     views_restored = True
 
+
+# --- Обработчики событий ---
 
 @bot.event
 async def on_voice_state_update(
@@ -5961,4 +6007,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
