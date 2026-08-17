@@ -8,8 +8,6 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent
-# The hosting setup historically used `env`, while local development commonly
-# uses `.env`. Loading both keeps deployments backwards compatible.
 load_dotenv(BASE_DIR / "env")
 load_dotenv(BASE_DIR / ".env")
 
@@ -23,7 +21,6 @@ LEGACY_APPLICATIONS_FILE = BASE_DIR.parent / "data" / "famq_applications.json"
 
 
 def env_int(name: str, default: int) -> int:
-    """Read a numeric Discord identifier and fail clearly on an invalid value."""
     raw_value = os.getenv(name, str(default)).strip()
     try:
         return int(raw_value)
@@ -39,6 +36,7 @@ def env_int_list(name: str, default: str) -> list[int]:
         raise RuntimeError(f"{name} must contain comma-separated numeric Discord IDs") from error
 
 
+# --- Основные ID серверов и каналов ---
 FAMQ_GUILD_ID = env_int("FAMQ_GUILD_ID", 1466147160763666472)
 FAMQ_PANEL_CHANNEL_ID = env_int("FAMQ_PANEL_CHANNEL_ID", 1466147735873786200)
 FAMQ_LOG_CHANNEL_ID = env_int("FAMQ_LOG_CHANNEL_ID", 1466322324184895510)
@@ -58,6 +56,7 @@ GIVEAWAY_CHANNEL_ID = env_int("FAMQ_GIVEAWAY_CHANNEL_ID", 1494988017016897718)
 VOICE_PANEL_CHANNEL_ID = env_int("FAMQ_VOICE_PANEL_CHANNEL_ID", 1495067186237145188)
 VOICE_TRIGGER_CHANNEL_ID = env_int("FAMQ_VOICE_TRIGGER_CHANNEL_ID", 1495067302880608306)
 
+# --- Роли ---
 FAMQ_RECRUITER_ROLE_ID = env_int("FAMQ_RECRUITER_ROLE_ID", 1485562379512315996)
 GLOBAL_APPLICATION_PING_ROLE_ID = env_int("GLOBAL_APPLICATION_PING_ROLE_ID", 1485562379512315996)
 APPLICATION_EXTRA_ACCEPT_ROLE_ID = env_int("APPLICATION_EXTRA_ACCEPT_ROLE_ID", 1508315652849401968)
@@ -80,6 +79,11 @@ FAMQ_CURATOR_ROLE_ID = env_int("FAMQ_CURATOR_ROLE_ID", 1488568512489459752)
 FAMQ_BOSS_ROLE_ID = env_int("FAMQ_BOSS_ROLE_ID", 1466148246010335232)
 FAMQ_HIGH_ROLE_ID = env_int("FAMQ_HIGH_ROLE_ID", 1485371224593797150)
 
+# --- Новые роли для рекрутеров (Chief Recruit и Dep Chief Recruit) ---
+CHIEF_RECRUIT_ROLE_ID = 1537855558101504071
+DEP_CHIEF_RECRUIT_ROLE_ID = 1537856131597082734
+
+# --- FEDRU ---
 FEDRU_GUILD_ID = env_int("FEDRU_GUILD_ID", 1495718321340026942)
 FEDRU_INFO_CHANNEL_ID = env_int("FEDRU_INFO_CHANNEL_ID", 1495718322484940903)
 FEDRU_PANEL_CHANNEL_ID = env_int("FEDRU_PANEL_CHANNEL_ID", 1495718322929406064)
@@ -93,8 +97,8 @@ FEDRU_APPLICATION_LOG_CHANNEL_ID = env_int("FEDRU_APPLICATION_LOG_CHANNEL_ID", 1
 FEDRU_SECURITY_LOG_CHANNEL_ID = env_int("FEDRU_SECURITY_LOG_CHANNEL_ID", 1495718325391589389)
 FEDRU_APPLICATION_CATEGORY_ID = env_int("FEDRU_APPLICATION_CATEGORY_ID", 1495718322484940908)
 FEDRU_RECRUITER_ROLE_ID = env_int("FEDRU_RECRUITER_ROLE_ID", 1495718321557999645)
-WHITELIST_CONTACT_ID = env_int("WHITELIST_CONTACT_ID", 1495718321557999645)
 
+# --- Настройки бота ---
 TOKEN = os.getenv("BOT_TOKEN") or os.getenv("FAMQ_BOT_TOKEN")
 APPLICATION_ANNOUNCE_CHANNEL_ID = env_int("APPLICATION_ANNOUNCE_CHANNEL_ID", 1466147547193278568)
 RESTART_STATUS_CHANNEL_ID = env_int("FAMQ_RESTART_STATUS_CHANNEL_ID", 1494333628489011220)
@@ -112,16 +116,24 @@ SPAM_LIMIT = env_int("FAMQ_SPAM_LIMIT", 5)
 MSK_TZ = timezone(timedelta(hours=3), name="MSK")
 RESTART_HOURS_MSK = (8, 20)
 
+# --- Баннеры ---
+# Баннер для панели заявок (п.9)
+PANEL_BANNER_URL = "https://cdn.discordapp.com/attachments/1529216198863229088/1538467795644186675/d6818f97-0909-4c12-88bc-abe9ece41691.png?ex=6a837209&is=6a822089&hm=53f15294904e736bef63f8c01245ee90f1a174ed61a1cdde490bcf9a15ec8fe2&"
+# Баннер для приветствия новых участников (п.10)
+WELCOME_BANNER_URL = "https://cdn.discordapp.com/attachments/1529216198863229088/1538467814078423050/562439cf-9ddd-4163-a159-5564e05d4536.png?ex=6a83720e&is=6a82208e&hm=789987fa8d5cffe91987cefe0461012aaeccf8dd3a31f807d20fb7f020d4c36b&"
+# Старый общий баннер для остальных случаев (можно оставить как есть)
 FAMILY_BRAND_BANNER_URL = (
     "https://cdn.discordapp.com/banners/1466147160763666472/"
     "59f6cd25885d5d98c0c4de5a78344832.png?size=1024"
 )
+
 GIVEAWAY_IMAGE_URL = FAMILY_BRAND_BANNER_URL
 VOICE_PANEL_THUMBNAIL_URL = FAMILY_BRAND_BANNER_URL
 FAMQ_GIF_URL = FAMILY_BRAND_BANNER_URL
 FAMQ_PROMO_IMAGE_URL = FAMILY_BRAND_BANNER_URL
 FAMQ_RESULT_GIF = FAMILY_BRAND_BANNER_URL
 
+# --- Константы серверов ---
 FAMQ_SERVER_DETROIT = "detroit"
 FAMQ_SERVER_DENVER = "denver"
 FAMQ_SERVER_SF = "sf"
@@ -129,6 +141,7 @@ FAMQ_SERVER_ORLANDO = "orlando"
 FAMQ_SERVER_FRIEND_VERIFICATION = "friend_verification"
 FEDRU_APPLICATION_SERVER = "federal_ru"
 
+# --- Ключи панелей ---
 PANEL_KEY = "famq_panel"
 INFO_PANEL_KEY = "famq_info_panel"
 CONTRACTS_PANEL_KEY = "famq_contracts_panel"
@@ -142,15 +155,18 @@ BTN_REJECT_PREFIX = "famq_reject_"
 BTN_CALL_PREFIX = "famq_call_"
 SELECT_CALL_PREFIX = "famq_callsel_"
 
+# --- Цвета ---
 COLOR = 0x050505
 COLOR_SOFT = 0x111111
 COLOR_MUTED = 0x1A1A1A
 COLOR_PANEL = 0x090D14
 
+# --- Список гильдий ---
 PROJECT_GUILD_IDS = (FAMQ_GUILD_ID, FEDRU_GUILD_ID)
 GUILD_SCOPES = [discord.Object(id=guild_id) for guild_id in PROJECT_GUILD_IDS]
 USI_ALLOWED_ROLE_IDS = [1487148388549132462, 1467068877572800720, 1485562379512315996, 1488568512489459752, 1466148166368760053]
 
+# --- Эмодзи (текст) ---
 EMOJI_DETROIT_TEXT = "<:detroit:1495013594587332668>"
 EMOJI_SF_TEXT = "<:san_francisco:1495013800426868878>"
 EMOJI_ORLANDO_TEXT = "<:orlando:1496182029895860426>"
@@ -160,6 +176,7 @@ EMOJI_CALL_TEXT = "<a:1468592240099070015:1495013587373002782>"
 EMOJI_REJECT_TEXT = "<a:1468592303940829214:1495013583451324487>"
 EMOJI_FRIEND_TEXT = "🤝"
 
+# --- Эмодзи (объекты) ---
 EMOJI_DETROIT = discord.PartialEmoji(name="detroit", id=1495013594587332668)
 EMOJI_SF = discord.PartialEmoji(name="san_francisco", id=1495013800426868878)
 EMOJI_ORLANDO = discord.PartialEmoji(name="orlando", id=1495013800426868878)
@@ -168,6 +185,7 @@ EMOJI_ACCEPT = discord.PartialEmoji(name="accept", id=1495013589583401083, anima
 EMOJI_CALL = discord.PartialEmoji(name="call", id=1495013587373002782, animated=True)
 EMOJI_REJECT = discord.PartialEmoji(name="reject", id=1495013583451324487, animated=True)
 
+# --- Голосовые эмодзи (текст) ---
 VOICE_EMOJI_ADD_SLOT_TEXT = "<:slot_add:1495066734518861834>"
 VOICE_EMOJI_REMOVE_SLOT_TEXT = "<:slot_remove:1495066731880648794>"
 VOICE_EMOJI_LOCK_TEXT = "<:room_lock:1495066729875902524>"
@@ -179,6 +197,7 @@ VOICE_EMOJI_TRANSFER_TEXT = "<:transfer_owner:1495066718370922768>"
 VOICE_EMOJI_RENAME_TEXT = "<:rename_room:1495066715728642129>"
 VOICE_EMOJI_ACCESS_TEXT = "<:room_access:1495066712679125095>"
 
+# --- Голосовые эмодзи (объекты) ---
 VOICE_EMOJI_ADD_SLOT = discord.PartialEmoji(name="slot_add", id=1495066734518861834)
 VOICE_EMOJI_REMOVE_SLOT = discord.PartialEmoji(name="slot_remove", id=1495066731880648794)
 VOICE_EMOJI_LOCK = discord.PartialEmoji(name="room_lock", id=1495066729875902524)
@@ -190,40 +209,97 @@ VOICE_EMOJI_TRANSFER = discord.PartialEmoji(name="transfer_owner", id=1495066718
 VOICE_EMOJI_RENAME = discord.PartialEmoji(name="rename_room", id=1495066715728642129)
 VOICE_EMOJI_ACCESS = discord.PartialEmoji(name="room_access", id=1495066712679125095)
 
-GLOBAL_APPLICATION_PING_ROLE_IDS = [APPLICATION_CONTROL_ROLE_ID, GLOBAL_APPLICATION_PING_ROLE_ID]
+# --- Список ролей для пинга в заявках (глобальные наблюдатели) ---
+GLOBAL_APPLICATION_PING_ROLE_IDS = [
+    APPLICATION_CONTROL_ROLE_ID,
+    GLOBAL_APPLICATION_PING_ROLE_ID,
+    CHIEF_RECRUIT_ROLE_ID,
+    DEP_CHIEF_RECRUIT_ROLE_ID,
+]
 
+# --- Конфигурации проектов ---
 PROJECT_CONFIGS: dict[int, dict[str, Any]] = {
     FAMQ_GUILD_ID: {
-        "project_name": "ASIXEZ", "application_name": "ASIXEZ", "panel_mode": "multi_server",
-        "panel_channel_id": FAMQ_PANEL_CHANNEL_ID, "info_channel_id": FAMQ_INFO_CHANNEL_ID,
-        "results_channel_id": FAMQ_RESULTS_CHANNEL_ID, "fleet_channel_id": FAMQ_FLEET_CHANNEL_ID,
-        "contracts_channel_id": FAMQ_CONTRACTS_CHANNEL_ID, "voice_panel_channel_id": VOICE_PANEL_CHANNEL_ID,
-        "voice_trigger_channel_id": VOICE_TRIGGER_CHANNEL_ID, "restart_status_channel_id": RESTART_STATUS_CHANNEL_ID,
-        "application_log_channel_id": FAMQ_LOG_CHANNEL_ID, "security_log_channel_id": LOG_CHANNEL_ID,
-        "activity_log_channel_id": FAMQ_ACTIVITY_LOG_CHANNEL_ID, "alert_role_id": ALERT_ROLE_ID,
-        "application_category_id": FAMQ_APPLICATION_CATEGORY_ID, "dm_fallback_channel_id": FAMQ_DM_FALLBACK_CHANNEL_ID,
-        "interview_channel_ids": list(FAMQ_INTERVIEW_CHANNEL_IDS), "waiting_channel_id": FAMQ_WAITING_CHANNEL_ID,
-        "promo_code": "FED", "promo_register_url": "https://majestic-rp.ru/register?utm_campaign=FED",
-        "contracts_mode": "full", "fleet_mode": "full",
+        "project_name": "ASIXEZ",
+        "application_name": "ASIXEZ",
+        "panel_mode": "single_server",  # изменено с multi_server на single_server
+        "panel_channel_id": FAMQ_PANEL_CHANNEL_ID,
+        "info_channel_id": FAMQ_INFO_CHANNEL_ID,
+        "results_channel_id": FAMQ_RESULTS_CHANNEL_ID,
+        "fleet_channel_id": FAMQ_FLEET_CHANNEL_ID,
+        "contracts_channel_id": FAMQ_CONTRACTS_CHANNEL_ID,
+        "voice_panel_channel_id": VOICE_PANEL_CHANNEL_ID,
+        "voice_trigger_channel_id": VOICE_TRIGGER_CHANNEL_ID,
+        "restart_status_channel_id": RESTART_STATUS_CHANNEL_ID,
+        "application_log_channel_id": FAMQ_LOG_CHANNEL_ID,
+        "security_log_channel_id": LOG_CHANNEL_ID,
+        "activity_log_channel_id": FAMQ_ACTIVITY_LOG_CHANNEL_ID,
+        "alert_role_id": ALERT_ROLE_ID,
+        "application_category_id": FAMQ_APPLICATION_CATEGORY_ID,
+        "dm_fallback_channel_id": FAMQ_DM_FALLBACK_CHANNEL_ID,
+        "interview_channel_ids": list(FAMQ_INTERVIEW_CHANNEL_IDS),
+        "waiting_channel_id": FAMQ_WAITING_CHANNEL_ID,
+        "promo_code": "FED",
+        "promo_register_url": "https://majestic-rp.ru/register?utm_campaign=FED",
+        "contracts_mode": "full",
+        "fleet_mode": "full",
+        # Оставляем только одну опцию – Detroit (другие сервера убраны из интерфейса)
         "application_options": [
-            {"key": FAMQ_SERVER_DETROIT, "label": "Detroit", "emoji": EMOJI_DETROIT, "emoji_text": EMOJI_DETROIT_TEXT, "recruiter_roles": [FAMQ_RECRUITER_ROLE_ID, FAMQ_DETROIT_TAG_ROLE_ID], "accept_role_id": FAMQ_ACCEPT_ROLE_ID},
-            {"key": FAMQ_SERVER_DENVER, "label": "Denver", "emoji": "🏔️", "emoji_text": "🏔️", "recruiter_roles": [FAMQ_DENVER_RECRUITER_ROLE_ID], "manager_roles": [FAMQ_DENVER_RECRUITER_ROLE_ID], "accept_role_id": FAMQ_DENVER_ACCEPT_ROLE_ID, "default_open": True},
-            {"key": FAMQ_SERVER_SF, "label": "San Francisco", "emoji": EMOJI_SF, "emoji_text": EMOJI_SF_TEXT, "recruiter_roles": [FAMQ_SF_ROLE_1_ID, FAMQ_SF_ROLE_2_ID], "accept_role_id": FAMQ_SF_ACCEPT_ROLE_ID},
-            {"key": FAMQ_SERVER_ORLANDO, "label": "Orlando", "emoji": EMOJI_ORLANDO, "emoji_text": EMOJI_ORLANDO_TEXT, "recruiter_roles": [FAMQ_ORLANDO_ROLE_ID], "accept_role_id": FAMQ_ORLANDO_ACCEPT_ROLE_ID},
-            {"key": FAMQ_SERVER_FRIEND_VERIFICATION, "label": "Верификация для друзей", "emoji": "🤝", "emoji_text": EMOJI_FRIEND_TEXT, "recruiter_roles": [FAMQ_FRIEND_VERIFY_ROLE_1_ID], "accept_role_id": FAMQ_FRIEND_VERIFY_ACCEPT_ROLE_ID, "visible_in_select": True},
+            {
+                "key": FAMQ_SERVER_DETROIT,
+                "label": "Detroit",
+                "emoji": EMOJI_DETROIT,
+                "emoji_text": EMOJI_DETROIT_TEXT,
+                "recruiter_roles": [
+                    FAMQ_RECRUITER_ROLE_ID,
+                    FAMQ_DETROIT_TAG_ROLE_ID,
+                    CHIEF_RECRUIT_ROLE_ID,
+                    DEP_CHIEF_RECRUIT_ROLE_ID,
+                ],
+                "manager_roles": [
+                    FAMQ_RECRUITER_ROLE_ID,
+                    FAMQ_DETROIT_TAG_ROLE_ID,
+                    CHIEF_RECRUIT_ROLE_ID,
+                    DEP_CHIEF_RECRUIT_ROLE_ID,
+                ],
+                "accept_role_id": FAMQ_ACCEPT_ROLE_ID,
+                "default_open": True,
+            }
         ],
     },
     FEDRU_GUILD_ID: {
-        "project_name": "ASIXEZ RU", "application_name": "ASIXEZ RU", "panel_mode": "single_server",
-        "panel_channel_id": FEDRU_PANEL_CHANNEL_ID, "info_channel_id": FEDRU_INFO_CHANNEL_ID,
-        "results_channel_id": FEDRU_RESULTS_CHANNEL_ID, "fleet_channel_id": FEDRU_FLEET_CHANNEL_ID,
-        "contracts_channel_id": FEDRU_CONTRACTS_CHANNEL_ID, "voice_panel_channel_id": FEDRU_VOICE_PANEL_CHANNEL_ID,
-        "voice_trigger_channel_id": FEDRU_VOICE_TRIGGER_CHANNEL_ID, "restart_status_channel_id": FEDRU_RESTART_STATUS_CHANNEL_ID,
-        "application_log_channel_id": FEDRU_APPLICATION_LOG_CHANNEL_ID, "security_log_channel_id": FEDRU_SECURITY_LOG_CHANNEL_ID,
-        "alert_role_id": FEDRU_RECRUITER_ROLE_ID, "application_category_id": FEDRU_APPLICATION_CATEGORY_ID,
-        "dm_fallback_channel_id": None, "interview_channel_ids": [], "waiting_channel_id": None,
-        "promo_code": "FED", "promo_register_url": "", "contracts_mode": "empty", "fleet_mode": "empty",
-        "application_options": [{"key": FEDRU_APPLICATION_SERVER, "label": "ASIXEZ RU", "emoji": EMOJI_ACCEPT, "emoji_text": EMOJI_ACCEPT_TEXT, "recruiter_roles": [FEDRU_RECRUITER_ROLE_ID], "accept_role_id": None}],
+        "project_name": "ASIXEZ RU",
+        "application_name": "ASIXEZ RU",
+        "panel_mode": "single_server",
+        "panel_channel_id": FEDRU_PANEL_CHANNEL_ID,
+        "info_channel_id": FEDRU_INFO_CHANNEL_ID,
+        "results_channel_id": FEDRU_RESULTS_CHANNEL_ID,
+        "fleet_channel_id": FEDRU_FLEET_CHANNEL_ID,
+        "contracts_channel_id": FEDRU_CONTRACTS_CHANNEL_ID,
+        "voice_panel_channel_id": FEDRU_VOICE_PANEL_CHANNEL_ID,
+        "voice_trigger_channel_id": FEDRU_VOICE_TRIGGER_CHANNEL_ID,
+        "restart_status_channel_id": FEDRU_RESTART_STATUS_CHANNEL_ID,
+        "application_log_channel_id": FEDRU_APPLICATION_LOG_CHANNEL_ID,
+        "security_log_channel_id": FEDRU_SECURITY_LOG_CHANNEL_ID,
+        "alert_role_id": FEDRU_RECRUITER_ROLE_ID,
+        "application_category_id": FEDRU_APPLICATION_CATEGORY_ID,
+        "dm_fallback_channel_id": None,
+        "interview_channel_ids": [],
+        "waiting_channel_id": None,
+        "promo_code": "FED",
+        "promo_register_url": "",
+        "contracts_mode": "empty",
+        "fleet_mode": "empty",
+        "application_options": [
+            {
+                "key": FEDRU_APPLICATION_SERVER,
+                "label": "ASIXEZ RU",
+                "emoji": EMOJI_ACCEPT,
+                "emoji_text": EMOJI_ACCEPT_TEXT,
+                "recruiter_roles": [FEDRU_RECRUITER_ROLE_ID],
+                "accept_role_id": None,
+            }
+        ],
     },
 }
 
