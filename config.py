@@ -80,8 +80,8 @@ FAMQ_BOSS_ROLE_ID = env_int("FAMQ_BOSS_ROLE_ID", 1466148246010335232)
 FAMQ_HIGH_ROLE_ID = env_int("FAMQ_HIGH_ROLE_ID", 1485371224593797150)
 
 # --- Новые роли для рекрутеров (Chief Recruit и Dep Chief Recruit) ---
-CHIEF_RECRUIT_ROLE_ID = 1537855558101504071
-DEP_CHIEF_RECRUIT_ROLE_ID = 1537856131597082734
+CHIEF_RECRUIT_ROLE_ID = env_int("CHIEF_RECRUIT_ROLE_ID", 1537855558101504071)
+DEP_CHIEF_RECRUIT_ROLE_ID = env_int("DEP_CHIEF_RECRUIT_ROLE_ID", 1537856131597082734)
 
 # --- FEDRU ---
 FEDRU_GUILD_ID = env_int("FEDRU_GUILD_ID", 1495718321340026942)
@@ -176,6 +176,18 @@ EMOJI_CALL_TEXT = "<a:1468592240099070015:1495013587373002782>"
 EMOJI_REJECT_TEXT = "<a:1468592303940829214:1495013583451324487>"
 EMOJI_FRIEND_TEXT = "🤝"
 
+# --- Эмодзи панели состава ---
+# Имена в записи не влияют на отображение: Discord использует ID эмодзи.
+EMOJI_STAFF_LEADERS_TEXT = "<:leaders:1534826361913610424>"
+EMOJI_STAFF_DEP_LEADERS_TEXT = "<:dep_leaders:1509145222691553351>"
+EMOJI_STAFF_CHIEF_RECRUIT_TEXT = "<:chief_recruit:1466306802927931515>"
+EMOJI_STAFF_CURATORS_TEXT = "<:curators:1509145530276646933>"
+EMOJI_STAFF_DEP_CHIEF_RECRUIT_TEXT = "<:dep_chief_recruit:1468591891166793865>"
+EMOJI_STAFF_BOSS_TEXT = "<:boss:1509145398537883760>"
+EMOJI_STAFF_HIGH_TEXT = "<:high:1466431600559394879>"
+EMOJI_STAFF_RECRUITS_TEXT = "<:recruits:1467062953647014043>"
+EMOJI_APPLICATION_INTRO_TEXT = "<:application_intro:1534826371107262574>"
+
 # --- Эмодзи (объекты) ---
 EMOJI_DETROIT = discord.PartialEmoji(name="detroit", id=1495013594587332668)
 EMOJI_SF = discord.PartialEmoji(name="san_francisco", id=1495013800426868878)
@@ -243,22 +255,21 @@ PROJECT_CONFIGS: dict[int, dict[str, Any]] = {
         "promo_register_url": "https://majestic-rp.ru/register?utm_campaign=FED",
         "contracts_mode": "full",
         "fleet_mode": "full",
-        # Оставляем только одну опцию – Detroit (другие сервера убраны из интерфейса)
+        # В панели семьи доступна только заявка на Denver.
         "application_options": [
             {
-                "key": FAMQ_SERVER_DETROIT,
-                "label": "Detroit",
-                "emoji": EMOJI_DETROIT,
-                "emoji_text": EMOJI_DETROIT_TEXT,
+                "key": FAMQ_SERVER_DENVER,
+                "label": "Denver",
+                "emoji": "🏔️",
+                "emoji_text": "🏔️",
                 "recruiter_roles": [
-                    FAMQ_RECRUITER_ROLE_ID,
-                    FAMQ_DETROIT_TAG_ROLE_ID,
+                    FAMQ_DENVER_RECRUITER_ROLE_ID,
                     CHIEF_RECRUIT_ROLE_ID,
                     DEP_CHIEF_RECRUIT_ROLE_ID,
                 ],
                 "manager_roles": [
-                    FAMQ_RECRUITER_ROLE_ID,
-                    FAMQ_DETROIT_TAG_ROLE_ID,
+                    APPLICATION_CONTROL_ROLE_ID,
+                    FAMQ_DENVER_RECRUITER_ROLE_ID,
                     CHIEF_RECRUIT_ROLE_ID,
                     DEP_CHIEF_RECRUIT_ROLE_ID,
                 ],
