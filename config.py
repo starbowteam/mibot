@@ -45,8 +45,6 @@ FAMQ_DM_FALLBACK_CHANNEL_ID = env_int("FAMQ_DM_FALLBACK_CHANNEL_ID", 14884775935
 FAMQ_INTERVIEW_CHANNEL_IDS = env_int_list("FAMQ_INTERVIEW_CHANNEL_IDS", "1488482479227797615,1488482493073068153")
 FAMQ_WAITING_CHANNEL_ID = env_int("FAMQ_WAITING_CHANNEL_ID", 1494985163178770432)
 FAMQ_INFO_CHANNEL_ID = env_int("FAMQ_INFO_CHANNEL_ID", 1466307109296668868)
-FAMQ_CONTRACTS_CHANNEL_ID = env_int("FAMQ_CONTRACTS_CHANNEL_ID", 1476848224026230885)
-FAMQ_FLEET_CHANNEL_ID = env_int("FAMQ_FLEET_CHANNEL_ID", 1476538051416162415)
 FAMQ_APPLICATION_CATEGORY_ID = env_int("FAMQ_APPLICATION_CATEGORY_ID", 1494984151516971128)
 FAMQ_WELCOME_CHANNEL_ID = env_int("FAMQ_WELCOME_CHANNEL_ID", 1504058190298353795)
 FAMQ_ACTIVITY_LOG_CHANNEL_ID = env_int("FAMQ_ACTIVITY_LOG_CHANNEL_ID", 1466322279440060572)
@@ -88,8 +86,6 @@ FEDRU_GUILD_ID = env_int("FEDRU_GUILD_ID", 1495718321340026942)
 FEDRU_INFO_CHANNEL_ID = env_int("FEDRU_INFO_CHANNEL_ID", 1495718322484940903)
 FEDRU_PANEL_CHANNEL_ID = env_int("FEDRU_PANEL_CHANNEL_ID", 1495718322929406064)
 FEDRU_RESULTS_CHANNEL_ID = env_int("FEDRU_RESULTS_CHANNEL_ID", 1495718322929406065)
-FEDRU_FLEET_CHANNEL_ID = env_int("FEDRU_FLEET_CHANNEL_ID", 1495718323323928682)
-FEDRU_CONTRACTS_CHANNEL_ID = env_int("FEDRU_CONTRACTS_CHANNEL_ID", 1495718323323928683)
 FEDRU_VOICE_PANEL_CHANNEL_ID = env_int("FEDRU_VOICE_PANEL_CHANNEL_ID", 1495718322929406071)
 FEDRU_VOICE_TRIGGER_CHANNEL_ID = env_int("FEDRU_VOICE_TRIGGER_CHANNEL_ID", 1495718322929406072)
 FEDRU_RESTART_STATUS_CHANNEL_ID = env_int("FEDRU_RESTART_STATUS_CHANNEL_ID", 1495718325391589390)
@@ -117,10 +113,10 @@ MSK_TZ = timezone(timedelta(hours=3), name="MSK")
 RESTART_HOURS_MSK = (8, 20)
 
 # --- Баннеры ---
-# Баннер для панели заявок (п.9)
-PANEL_BANNER_URL = "https://cdn.discordapp.com/attachments/1529216198863229088/1538467795644186675/d6818f97-0909-4c12-88bc-abe9ece41691.png?ex=6a837209&is=6a822089&hm=53f15294904e736bef63f8c01245ee90f1a174ed61a1cdde490bcf9a15ec8fe2&"
+# Баннер для Components V2-карточки заявок.
+PANEL_BANNER_URL = "https://cdn.discordapp.com/banners/1466147160763666472/6dd2eab1023614a0ecb833de6bda25b3.png?size=1024"
 # Баннер для приветствия новых участников (п.10)
-WELCOME_BANNER_URL = "https://cdn.discordapp.com/attachments/1529216198863229088/1538467814078423050/562439cf-9ddd-4163-a159-5564e05d4536.png?ex=6a83720e&is=6a82208e&hm=789987fa8d5cffe91987cefe0461012aaeccf8dd3a31f807d20fb7f020d4c36b&"
+WELCOME_BANNER_URL = "https://cdn.discordapp.com/attachments/1529216198863229088/1538467814078423050/562439cf-9ddd-4163-a159-5564e05d4536.png?ex=6a880f4e&is=6a86bdce&hm=987967102746a991ff34b44d9a052486261b27c04abf427e4d5223b3b9210b4b&"
 # Старый общий баннер для остальных случаев (можно оставить как есть)
 FAMILY_BRAND_BANNER_URL = (
     "https://cdn.discordapp.com/banners/1466147160763666472/"
@@ -136,6 +132,8 @@ FAMQ_RESULT_GIF = FAMILY_BRAND_BANNER_URL
 # --- Константы серверов ---
 FAMQ_SERVER_DETROIT = "detroit"
 FAMQ_SERVER_DENVER = "denver"
+# Кастомный эмодзи Denver с сервера семьи. Его имя берётся из кэша сервера при публикации.
+DENVER_EMOJI_ID = 1518856005113610370
 FAMQ_SERVER_SF = "sf"
 FAMQ_SERVER_ORLANDO = "orlando"
 FAMQ_SERVER_FRIEND_VERIFICATION = "friend_verification"
@@ -144,8 +142,6 @@ FEDRU_APPLICATION_SERVER = "federal_ru"
 # --- Ключи панелей ---
 PANEL_KEY = "famq_panel"
 INFO_PANEL_KEY = "famq_info_panel"
-CONTRACTS_PANEL_KEY = "famq_contracts_panel"
-FLEET_PANEL_KEY = "famq_fleet_panel"
 VOICE_PANEL_KEY = "famq_voice_panel"
 APPLICATION_STATE_KEY = "famq_application_state"
 PANEL_SELECT_ID = "famq_server_select"
@@ -176,17 +172,20 @@ EMOJI_CALL_TEXT = "<a:1468592240099070015:1495013587373002782>"
 EMOJI_REJECT_TEXT = "<a:1468592303940829214:1495013583451324487>"
 EMOJI_FRIEND_TEXT = "🤝"
 
-# --- Эмодзи панели состава ---
-# Имена в записи не влияют на отображение: Discord использует ID эмодзи.
-EMOJI_STAFF_LEADERS_TEXT = "<:leaders:1534826361913610424>"
-EMOJI_STAFF_DEP_LEADERS_TEXT = "<:dep_leaders:1509145222691553351>"
-EMOJI_STAFF_CHIEF_RECRUIT_TEXT = "<:chief_recruit:1466306802927931515>"
-EMOJI_STAFF_CURATORS_TEXT = "<:curators:1509145530276646933>"
-EMOJI_STAFF_DEP_CHIEF_RECRUIT_TEXT = "<:dep_chief_recruit:1468591891166793865>"
-EMOJI_STAFF_BOSS_TEXT = "<:boss:1509145398537883760>"
-EMOJI_STAFF_HIGH_TEXT = "<:high:1466431600559394879>"
-EMOJI_STAFF_RECRUITS_TEXT = "<:recruits:1467062953647014043>"
-EMOJI_APPLICATION_INTRO_TEXT = "<:application_intro:1534826371107262574>"
+# --- ID кастомных эмодзи ---
+# Имя эмодзи берётся из Discord во время работы бота: это исключает отображение
+# кода вида <:название:id> вместо самого эмодзи.
+EMOJI_STAFF_LEADERS_ID = 1534826361913610424
+EMOJI_STAFF_DEP_LEADERS_ID = 1509145222691553351
+EMOJI_STAFF_CHIEF_RECRUIT_ID = 1466306802927931515
+EMOJI_STAFF_CURATORS_ID = 1509145530276646933
+EMOJI_STAFF_DEP_CHIEF_RECRUIT_ID = 1468591891166793865
+EMOJI_STAFF_BOSS_ID = 1509145398537883760
+EMOJI_STAFF_HIGH_ID = 1466431600559394879
+EMOJI_STAFF_RECRUITS_ID = 1467062953647014043
+EMOJI_APPLICATION_INTRO_ID = 1534826371107262574
+EMOJI_WELCOME_TITLE_ID = 1509145548270075954
+EMOJI_WELCOME_LINE_ID = 1468592121203392643
 
 # --- Эмодзи (объекты) ---
 EMOJI_DETROIT = discord.PartialEmoji(name="detroit", id=1495013594587332668)
@@ -238,8 +237,6 @@ PROJECT_CONFIGS: dict[int, dict[str, Any]] = {
         "panel_channel_id": FAMQ_PANEL_CHANNEL_ID,
         "info_channel_id": FAMQ_INFO_CHANNEL_ID,
         "results_channel_id": FAMQ_RESULTS_CHANNEL_ID,
-        "fleet_channel_id": FAMQ_FLEET_CHANNEL_ID,
-        "contracts_channel_id": FAMQ_CONTRACTS_CHANNEL_ID,
         "voice_panel_channel_id": VOICE_PANEL_CHANNEL_ID,
         "voice_trigger_channel_id": VOICE_TRIGGER_CHANNEL_ID,
         "restart_status_channel_id": RESTART_STATUS_CHANNEL_ID,
@@ -251,10 +248,8 @@ PROJECT_CONFIGS: dict[int, dict[str, Any]] = {
         "dm_fallback_channel_id": FAMQ_DM_FALLBACK_CHANNEL_ID,
         "interview_channel_ids": list(FAMQ_INTERVIEW_CHANNEL_IDS),
         "waiting_channel_id": FAMQ_WAITING_CHANNEL_ID,
-        "promo_code": "FED",
-        "promo_register_url": "https://majestic-rp.ru/register?utm_campaign=FED",
-        "contracts_mode": "full",
-        "fleet_mode": "full",
+        "promo_code": "ASIX",
+        "promo_register_url": "https://majestic-rp.ru/register?utm_campaign=ASIX",
         # В панели семьи доступна только заявка на Denver.
         "application_options": [
             {
@@ -285,8 +280,6 @@ PROJECT_CONFIGS: dict[int, dict[str, Any]] = {
         "panel_channel_id": FEDRU_PANEL_CHANNEL_ID,
         "info_channel_id": FEDRU_INFO_CHANNEL_ID,
         "results_channel_id": FEDRU_RESULTS_CHANNEL_ID,
-        "fleet_channel_id": FEDRU_FLEET_CHANNEL_ID,
-        "contracts_channel_id": FEDRU_CONTRACTS_CHANNEL_ID,
         "voice_panel_channel_id": FEDRU_VOICE_PANEL_CHANNEL_ID,
         "voice_trigger_channel_id": FEDRU_VOICE_TRIGGER_CHANNEL_ID,
         "restart_status_channel_id": FEDRU_RESTART_STATUS_CHANNEL_ID,
@@ -297,10 +290,8 @@ PROJECT_CONFIGS: dict[int, dict[str, Any]] = {
         "dm_fallback_channel_id": None,
         "interview_channel_ids": [],
         "waiting_channel_id": None,
-        "promo_code": "FED",
-        "promo_register_url": "",
-        "contracts_mode": "empty",
-        "fleet_mode": "empty",
+        "promo_code": "ASIX",
+        "promo_register_url": "https://majestic-rp.ru/register?utm_campaign=ASIX",
         "application_options": [
             {
                 "key": FEDRU_APPLICATION_SERVER,
