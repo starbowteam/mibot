@@ -33,81 +33,6 @@ def console_log(message: str) -> None:
     sys.stdout.write(f"{message}\n")
 
 
-FAMQ_FLEET = [
-    {
-        "name": "Enus Callinon",
-        "real_name": "Rolls-Royce Cullinan",
-        "capacity": "180 кг",
-        "speed": "320 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1484133399177465977/image.png?ex=69ccf070&is=69cb9ef0&hm=e6cf5275ffd01f3b98a44565b97f0cc1ecac07e294e1b1f9494a5f6d99aecbf2&",
-    },
-    {
-        "name": "Ubermacht X6 M F86",
-        "real_name": "BMW X6 M F86",
-        "capacity": "100 кг",
-        "speed": "275 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1484133964330565765/image.png?ex=69ccf0f6&is=69cb9f76&hm=68e52ac053de58ac41b294e3f62629293a032a51af6eba8cd898fae40e8d0458&",
-    },
-    {
-        "name": "Pegassi Eventora",
-        "real_name": "Lamborghini Reventon",
-        "capacity": "35 кг",
-        "speed": "315 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1484134255788560426/image.png?ex=69ccf13c&is=69cb9fbc&hm=1ecd441518395f5e8ba4d211e9dd0083ca30daf975f8a318a280a7739598599c&",
-    },
-    {
-        "name": "Ubermacht M8 Gran Coupe",
-        "real_name": "BMW M8 Gran Coupe",
-        "capacity": "100 кг",
-        "speed": "315 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1484134528522911774/image.png?ex=69ccf17d&is=69cb9ffd&hm=d690af9bc05ab9d1fb67b6c799740ca5aa1c5617faed73a93e333f45a2afea62&",
-    },
-    {
-        "name": "Grotti Timucua SP3",
-        "real_name": "Ferrari Daytona SP3",
-        "capacity": "30 кг",
-        "speed": "360 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1484135036776218654/image.png?ex=69ccf1f6&is=69cba076&hm=427c772ca0d4eeb72a6a7b52c34e0fcc704ab39fc010f305dba629e7f0c08c16&",
-    },
-    {
-        "name": "Buzzard S",
-        "real_name": "Вертолёт",
-        "capacity": "500 кг",
-        "speed": "Max км/ч",
-        "fuel": "Regular",
-        "rank": "5 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1487371753733754930/image.png?ex=69ccdae4&is=69cb8964&hm=8eb1aef5d4a09627cedd431b443779a36facd838037fa67f8b5a041c62df43f5&",
-    },
-    {
-        "name": "Daimler ASG P-One",
-        "real_name": "Mercedes-Benz Project One",
-        "capacity": "5 кг",
-        "speed": "370 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1488563013547196556/image.png?ex=69cd3bd6&is=69cbea56&hm=d375f2ae917b166c1f59a0c991b07010db42049d2c36bbf2cc2e25f022733eef&",
-    },
-    {
-        "name": "Daimler Runner",
-        "real_name": "Mercedes-Benz Sprinter",
-        "capacity": "180 кг",
-        "speed": "230 км/ч",
-        "fuel": "Premium",
-        "rank": "3 Ранг",
-        "image": "https://cdn.discordapp.com/attachments/1476538051416162415/1488564435839746138/image.png?ex=69cd3d29&is=69cbeba9&hm=2f53326ce184591e7c7c035e51170b542bb47e5edfed8f0a36f8cc14cc487519&",
-    },
-]
-
 storage = BotStorage(
     applications_file=APPLICATIONS_FILE,
     panels_file=PANELS_FILE,
@@ -851,27 +776,22 @@ kick_restriction_cache: dict[tuple[int, int], dict[str, Any]] = {}
 join_alert_state: dict[int, dict[str, float]] = {}
 application_action_locks: dict[int, asyncio.Lock] = {}
 
-def build_panel_embed(guild_id: int) -> discord.Embed:
+
+def get_guild_emoji_text(guild: discord.Guild | None, emoji_id: int, fallback: str = "•") -> str:
+    """Возвращает настоящий кастомный эмодзи с сервера по его ID, а не текстовый код."""
+    emoji = guild.get_emoji(int(emoji_id)) if guild is not None else None
+    return str(emoji) if emoji is not None else fallback
+
+
+def get_custom_emoji_markup(guild: discord.Guild | None, emoji_id: int, fallback_name: str) -> str:
+    """Возвращает markup кастомного Discord emoji, даже если он ещё не попал в кэш."""
+    emoji = guild.get_emoji(int(emoji_id)) if guild is not None else None
+    return str(emoji) if emoji is not None else f"<:{fallback_name}:{int(emoji_id)}>"
+
+
+def build_panel_embed(guild_id: int, guild: discord.Guild | None = None) -> discord.Embed:
     project = get_project(guild_id)
     visible_options = get_visible_application_options(guild_id)
-
-    if guild_id == FAMQ_GUILD_ID:
-        embed = make_embed(
-            description="\n".join(
-                [
-                    f"{EMOJI_APPLICATION_INTRO_TEXT} Путь в семью начинается здесь!",
-                    "• Уведомление о приглашении на обзвон обычно отправляется в личные сообщения.",
-                    "Обычно заявки обрабатываются в течение 1-2 дней — всё зависит от того, насколько загружены наши рекрутеры на данный момент.",
-                    "",
-                    "Подать заявку можно только при открытом наборе. Если не выходит — набор закрыт.",
-                ]
-            ),
-            color=COLOR_PANEL,
-        )
-        # Изображение внутри одного эмбэда Discord выводит снизу и на всю его ширину.
-        if PANEL_BANNER_URL:
-            embed.set_image(url=PANEL_BANNER_URL)
-        return embed
 
     open_lines = [
         f"{option.get('emoji_text', '•')} **{option['label']}**"
@@ -993,14 +913,27 @@ def build_dm_embed(title: str, description: str) -> discord.Embed:
 
 
 STAFF_ROLE_GROUPS = (
-    ("Leaders", FAMQ_FRIEND_VERIFY_ROLE_1_ID, EMOJI_STAFF_LEADERS_TEXT),
-    ("Dep Leaders", FAMQ_DEP_LEADER_ROLE_ID, EMOJI_STAFF_DEP_LEADERS_TEXT),
-    ("Chief Recruit", CHIEF_RECRUIT_ROLE_ID, EMOJI_STAFF_CHIEF_RECRUIT_TEXT),
-    ("Curators", FAMQ_CURATOR_ROLE_ID, EMOJI_STAFF_CURATORS_TEXT),
-    ("Dep Chief Recruit", DEP_CHIEF_RECRUIT_ROLE_ID, EMOJI_STAFF_DEP_CHIEF_RECRUIT_TEXT),
-    ("Boss", FAMQ_BOSS_ROLE_ID, EMOJI_STAFF_BOSS_TEXT),
-    ("High", FAMQ_HIGH_ROLE_ID, EMOJI_STAFF_HIGH_TEXT),
-    ("Recruits", FAMQ_RECRUITER_ROLE_ID, EMOJI_STAFF_RECRUITS_TEXT),
+    ("Leaders", FAMQ_FRIEND_VERIFY_ROLE_1_ID, EMOJI_STAFF_LEADERS_ID),
+    ("Dep Leaders", FAMQ_DEP_LEADER_ROLE_ID, EMOJI_STAFF_DEP_LEADERS_ID),
+    ("Chief Recruit", CHIEF_RECRUIT_ROLE_ID, EMOJI_STAFF_CHIEF_RECRUIT_ID),
+    ("Curators", FAMQ_CURATOR_ROLE_ID, EMOJI_STAFF_CURATORS_ID),
+    ("Dep Chief Recruit", DEP_CHIEF_RECRUIT_ROLE_ID, EMOJI_STAFF_DEP_CHIEF_RECRUIT_ID),
+    ("Boss", FAMQ_BOSS_ROLE_ID, EMOJI_STAFF_BOSS_ID),
+    ("High", FAMQ_HIGH_ROLE_ID, EMOJI_STAFF_HIGH_ID),
+    ("Recruits", FAMQ_RECRUITER_ROLE_ID, EMOJI_STAFF_RECRUITS_ID),
+)
+
+# Первый подходящий префикс — приоритетный. Это предотвращает неверный формат
+# у участников, у которых одновременно несколько ролей.
+NICKNAME_RULES: tuple[tuple[int, str], ...] = (
+    (CHIEF_RECRUIT_ROLE_ID, "Chief Rec"),
+    (DEP_CHIEF_RECRUIT_ROLE_ID, "Dcr"),
+    (FAMQ_DEP_LEADER_ROLE_ID, "Dep"),
+    (FAMQ_CURATOR_ROLE_ID, "Curator"),
+    (FAMQ_BOSS_ROLE_ID, "Boss"),
+    (FAMQ_HIGH_ROLE_ID, "High"),
+    (FAMQ_RECRUITER_ROLE_ID, "Rec"),
+    (APPLICATION_EXTRA_ACCEPT_ROLE_ID, "ASX"),
 )
 
 
@@ -1018,13 +951,13 @@ def build_staff_panel_embed(guild: discord.Guild) -> discord.Embed:
                 break
 
     embed = make_embed(color=COLOR_PANEL)
-    for title, role_id, emoji_text in STAFF_ROLE_GROUPS:
+    for title, role_id, emoji_id in STAFF_ROLE_GROUPS:
         members = sorted(members_by_role[role_id], key=lambda member: member.display_name.casefold())
         value = "\n".join(member.mention for member in members) if members else "—"
         embed.add_field(
-            name=f"{emoji_text} {title}",
+            name=f"{get_guild_emoji_text(guild, emoji_id, '•')} {title}",
             value=trim_embed_text(value, limit=1024),
-            inline=False,
+            inline=True,
         )
     return embed
 
@@ -1052,11 +985,11 @@ class StaffPanelView(discord.ui.View):
 
 def get_required_nickname_prefix(member: discord.Member) -> str | None:
     role_ids = {role.id for role in member.roles}
-    if FAMQ_FRIEND_VERIFY_ROLE_1_ID in role_ids:
-        return None
     for role_id, prefix in NICKNAME_RULES:
         if int(role_id) in role_ids:
             return prefix
+    if FAMQ_FRIEND_VERIFY_ROLE_1_ID in role_ids:
+        return None
     return None
 
 
@@ -1240,17 +1173,17 @@ def build_usi_embed(guild: discord.Guild, member: discord.Member | None, user: d
     return embed
 
 
-class CopyDiscordIdView(discord.ui.View):
-    def __init__(self, target_user_id: int):
-        super().__init__(timeout=None)
-        self.target_user_id = target_user_id
-
-    @discord.ui.button(label="Копировать Discord-ID", style=discord.ButtonStyle.secondary)
-    async def copy_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-        await interaction.response.send_message(
-            f"Discord ID пользователя:\n```text\n{self.target_user_id}\n```",
-            ephemeral=True,
-        )
+async def get_famq_member_for_interaction(interaction: discord.Interaction) -> discord.Member | None:
+    guild = interaction.guild or bot.get_guild(FAMQ_GUILD_ID)
+    if guild is None:
+        return None
+    member = guild.get_member(interaction.user.id)
+    if member is not None:
+        return member
+    try:
+        return await guild.fetch_member(interaction.user.id)
+    except Exception:
+        return None
 
 
 class NicknameSelfFixModal(discord.ui.Modal):
@@ -1271,11 +1204,12 @@ class NicknameSelfFixModal(discord.ui.Modal):
         self.add_item(self.static_id)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        if interaction.guild is None or not isinstance(interaction.user, discord.Member):
-            await interaction.response.send_message("Не удалось найти вас на сервере.", ephemeral=True)
+        member = await get_famq_member_for_interaction(interaction)
+        if member is None:
+            await interaction.response.send_message("Не удалось найти вас на сервере ASIXEZ.", ephemeral=True)
             return
 
-        prefix = get_required_nickname_prefix(interaction.user)
+        prefix = get_required_nickname_prefix(member)
         if prefix is None:
             await interaction.response.send_message("Для ваших ролей форма ника не требуется.", ephemeral=True)
             return
@@ -1287,7 +1221,7 @@ class NicknameSelfFixModal(discord.ui.Modal):
 
         new_nick = build_formatted_nickname(prefix, str(self.irl_name), static_id)
         try:
-            await interaction.user.edit(nick=new_nick, reason="Nickname self-fix form")
+            await member.edit(nick=new_nick, reason="Nickname self-fix form")
         except Exception:
             await interaction.response.send_message(
                 "Не удалось изменить ник. Проверьте, что роль бота выше вашей роли, или обратитесь к старшему.",
@@ -1308,10 +1242,11 @@ class NicknameSelfFixView(discord.ui.View):
         custom_id="famq_self_fix_nickname",
     )
     async def fix_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-        if interaction.guild is None or not isinstance(interaction.user, discord.Member):
-            await interaction.response.send_message("Не удалось найти вас на сервере.", ephemeral=True)
+        member = await get_famq_member_for_interaction(interaction)
+        if member is None:
+            await interaction.response.send_message("Не удалось найти вас на сервере ASIXEZ.", ephemeral=True)
             return
-        prefix = get_required_nickname_prefix(interaction.user)
+        prefix = get_required_nickname_prefix(member)
         if prefix is None:
             await interaction.response.send_message("Для ваших ролей форма ника не требуется.", ephemeral=True)
             return
@@ -1581,7 +1516,7 @@ def build_info_embed() -> discord.Embed:
             "> - Иерархия соблюдается. Вопросы — через личку или офицеров, наказуемо; **WARN / BAN / PERMBAN**",
             "",
             f"> {EMOJI_ACCEPT_TEXT} **Заявки / Вступление:**",
-            "> - Чтобы вступить в семью на сервере **DETROIT** нужно подать заявку тут — <#1466147735873786200>",
+            "> - Чтобы вступить в семью на сервере **Denver** нужно подать заявку тут — <#1466147735873786200>",
             "> **Старшие рассмотрят вашу заявку так скоро как получится. После принятия заявки поставьте ник по форме —**",
             "> - Имя Фамилия (В игре)",
             "",
@@ -1598,9 +1533,9 @@ def build_promo_embed() -> discord.Embed:
         [
             f"{EMOJI_REVIEW_TEXT} **Хочешь играть на Majestic RP?**",
             "",
-            f"{EMOJI_ACCEPT_TEXT} Введите в чат промокод: **`/promo FED`**",
+            f"{EMOJI_ACCEPT_TEXT} Введите в чат промокод: **`/promo ASIX`**",
             f"{EMOJI_REVIEW_TEXT} Или зарегистрируйтесь по ссылке:",
-            "https://majestic-rp.ru/register?utm_campaign=FED",
+            "https://majestic-rp.ru/register?utm_campaign=ASIX",
             "",
             "*Поддержи семью — используй промокод при регистрации!*",
         ]
@@ -1611,158 +1546,6 @@ def build_promo_embed() -> discord.Embed:
     return embed
 
 
-def build_contract_embeds() -> list[discord.Embed]:
-    intro = discord.Embed(
-        description="\n".join(
-            [
-                f"# {EMOJI_REVIEW_TEXT} Семейные Контракты и получение денег.",
-                "- **Семейные контракты это** — Возможность прокачки уровня семьи, и заработка для себя.",
-                "",
-                "- За контракты, за которые функционально дают деньги на баланс семьи, а не игроку — мы выдаём деньги. Для их получения достаточно написать в ветку ниже с запросом и скрином выполнения контракта.",
-            ]
-        ),
-        color=COLOR,
-    )
-
-    listing = discord.Embed(
-        description="\n".join(
-            [
-                f"# {EMOJI_CALL_TEXT} Список семейных контрактов. {EMOJI_CALL_TEXT}",
-                "- Гровер II",
-                "- Курьер Green I",
-                "- Подставная стройка",
-                "- Нелегальный поставщик II",
-                "- Ценная партия I",
-                "- Ценный урок",
-                "- Наводка I",
-            ]
-        ),
-        color=COLOR,
-    )
-
-    details1 = discord.Embed(
-        description="\n".join(
-            [
-                f"# {EMOJI_ACCEPT_TEXT} Информация о семейных контрактах. {EMOJI_ACCEPT_TEXT}",
-                "",
-                f"## {EMOJI_REVIEW_TEXT} **Гровер II:**",
-                "*Данный контракт представляет собой задание на выращивание и последующую поставку продукции заказчику. Контракт активируется за фиксированную сумму и требует выполнения конкретного объёма поставки.*",
-                "",
-                "- **Активация:**",
-                "• Контракт становится доступным при достижении 6 уровня персонажа.",
-                "• Активация контракта осуществляется за 10 000$.",
-                "",
-                "- **Суть задания. Необходимо:**",
-                "• Вырастить продукцию типа Green.",
-                "• Обеспечить поставку 110 кустов Green.",
-                "• Доставить указанное количество заказчику (Джамалу).",
-                "",
-                "- **Вознаграждение за выполнение:**",
-                "• Оплата: 158.500$ (в фонд семьи)",
-                "• Оплата игроку (вам): 50.000$",
-                "• Репутация: 200",
-                "• Семейный опыт: 150",
-                "",
-                f"## {EMOJI_REVIEW_TEXT} **Подставная стройка:**",
-                "*Данный контракт представляет собой задание на разгрузку и поставку поддержанных кабелей на строительный объект в районе военной базы Форт-Занкудо. Контракт активируется за фиксированную сумму и требует выполнения установленного объёма поставки.*",
-                "",
-                "- **Активация:**",
-                "• Контракт становится доступным при достижении 7 уровня персонажа.",
-                "• Активация контракта осуществляется за 10 000$.",
-                "",
-                "- **Суть задания. Необходимо:**",
-                "• Разгрузить поддержанные кабели.",
-                "• Доставить 130 ящиков на стройку около военной базы Форт-Занкудо.",
-                "• Выполнить поставку в полном объёме (130/130).",
-                "",
-                "- **Вознаграждение за выполнение:**",
-                "• Оплата: 141.500$ (в фонд семьи)",
-                "• Оплата игроку (каждому): 50.000$",
-                "• Репутация: 210",
-                "• Семейный опыт: 160",
-                "",
-                f"## {EMOJI_REVIEW_TEXT} **Нелегальный поставщик II:**",
-                "*Данный контракт представляет собой задание на угон и доставку транспортного средства по заказу Рагнара. Контракт активируется за фиксированную сумму и требует выполнения конкретной цели.*",
-                "",
-                "- **Активация:**",
-                "• Контракт становится доступным при достижении 8 уровня персонажа.",
-                "• Требуется 2 ранг любой работы на 7 уровне персонажа.",
-                "• Активация контракта осуществляется за 200$.",
-                "",
-                "- **Суть задания. Необходимо:**",
-                "• Угнать транспорт по заказу Рагнара.",
-                "• Доставить транспорт в указанную точку.",
-                "• Выполнить заказ в полном объёме (1/1).",
-                "",
-                "- **Вознаграждение за выполнение:**",
-                "• Оплата игроку (Вам): Зависит от уровня.",
-                "• Репутация: 210",
-                "• Семейный опыт: 160",
-            ]
-        ),
-        color=COLOR,
-    )
-
-    details2 = discord.Embed(
-        description="\n".join(
-            [
-                f"## {EMOJI_REVIEW_TEXT} **Ценная партия I:**",
-                "*Данный контракт представляет собой задание на кражу и доставку наличных средств для подельника Оскара. Контракт активируется за фиксированную сумму и требует выполнения установленного объёма.*",
-                "",
-                "- **Активация:**",
-                "• Контракт становится доступным при достижении 6 уровня персонажа.",
-                "• Активация контракта осуществляется за 3 000$.",
-                "",
-                "- **Суть задания. Необходимо:**",
-                "• Украсть малую партию пачек наличных.",
-                "• Доставить 19 500$ для подельника Оскара.",
-                "• Выполнить задание в полном объёме (19 500 / 19 500).",
-                "",
-                "- **Вознаграждение за выполнение:**",
-                "• Оплата: 119 000$ (в фонд семьи)",
-                "• Оплата игроку (Вам): 15.000$",
-                "• Репутация: 210",
-                "• Семейный опыт: 180",
-                "",
-                f"## {EMOJI_REVIEW_TEXT} **Ценный урок:**",
-                "*Данный контракт представляет собой задание на изготовление и обналичивание поддельной подарочной карты по схеме Волкера. Контракт активируется за фиксированную сумму и требует выполнения установленной цели.*",
-                "",
-                "- **Активация:**",
-                "• Контракт становится доступным при достижении 7 уровня персонажа.",
-                "• Активация контракта осуществляется за 5 000$.",
-                "",
-                "- **Суть задания. Необходимо:**",
-                "• Создать в помещении «Поддельная печать» поддельную подарочную карту.",
-                "• Обналичить её в магазине одежды по схеме Волкера.",
-                "• Выполнить задание в полном объёме (0/1 → 1/1).",
-                "",
-                "- **Вознаграждение за выполнение:**",
-                "• Оплата: 80 000$ – 100 000$ (в фонд семьи)",
-                "• Оплата игроку (Вам): 15.000$",
-                "• Репутация: 80",
-                "• Семейный опыт: 50",
-            ]
-        ),
-        color=COLOR,
-    )
-
-    return [intro, listing, details1, details2]
-
-
-def build_fleet_embeds() -> list[discord.Embed]:
-    embeds: list[discord.Embed] = []
-    for car in FAMQ_FLEET:
-        embed = discord.Embed(
-            title=f"{EMOJI_CALL_TEXT} {car['name']} — {car['real_name']} {EMOJI_CALL_TEXT}",
-            color=COLOR,
-        )
-        embed.add_field(name="🏋️ Вместимость", value=f"**{car['capacity']}**", inline=True)
-        embed.add_field(name="⚡ Скорость", value=f"**{car['speed']}**", inline=True)
-        embed.add_field(name="⛽ Топливо", value=f"**{car['fuel']}**", inline=True)
-        embed.add_field(name="🔑 Доступ", value=f"**{car['rank']}**", inline=True)
-        embed.set_image(url=car["image"])
-        embeds.append(embed)
-    return embeds
 
 
 def build_info_embed_for_guild(guild_id: int) -> discord.Embed:
@@ -1809,7 +1592,7 @@ def build_promo_embed_for_guild(guild_id: int) -> discord.Embed:
         description_lines = [
             f"{EMOJI_REVIEW_TEXT} **Хочешь играть на Russia Online?**",
             "",
-            f"{EMOJI_ACCEPT_TEXT} Введите в чат промокод: **`/promo {project.get('promo_code', 'FED')}`**",
+            f"{EMOJI_ACCEPT_TEXT} Введите в чат промокод: **`/promo {project.get('promo_code', 'ASIX')}`**",
             f"{EMOJI_REVIEW_TEXT} Или зарегистрируйтесь по ссылке:",
             project.get("promo_register_url") or "Пока не указано",
             "",
@@ -1820,20 +1603,6 @@ def build_promo_embed_for_guild(guild_id: int) -> discord.Embed:
             embed.set_image(url=FAMQ_PROMO_IMAGE_URL)
         return embed
     return build_promo_embed()
-
-
-def build_contract_embeds_for_guild(guild_id: int) -> list[discord.Embed]:
-    project = get_project(guild_id)
-    if project and project.get("contracts_mode") == "empty":
-        return [discord.Embed(description="Контракты скоро будут добавлены.", color=COLOR)]
-    return build_contract_embeds()
-
-
-def build_fleet_embeds_for_guild(guild_id: int) -> list[discord.Embed]:
-    project = get_project(guild_id)
-    if project and project.get("fleet_mode") == "empty":
-        return [discord.Embed(description="Автопарк скоро будет добавлен.", color=COLOR)]
-    return build_fleet_embeds()
 
 
 def build_giveaway_embed(giveaway: dict[str, Any], creator_mention: str) -> discord.Embed:
@@ -2581,29 +2350,50 @@ async def send_famq_welcome_message(member: discord.Member) -> None:
     if not text_sendable(channel):
         return
 
-    member_count = member.guild.member_count or len(member.guild.members)
-    embed = make_embed(
-        title=f"{EMOJI_ACCEPT_TEXT} Добро пожаловать в ASIXEZ",
-        description=(
-            f"👋 {member.mention} зашёл на сервер.\n\n"
-            f"👥 Теперь нас: **{member_count}**\n"
-            "📋 Заявки и верификация: <#1466147735873786200>\n"
-            "🎁 Промокод: **`/promo FED`**"
+    title_emoji = get_guild_emoji_text(member.guild, EMOJI_WELCOME_TITLE_ID, "✦")
+    line_emoji = get_guild_emoji_text(member.guild, EMOJI_WELCOME_LINE_ID, "•")
+    channel_embed = make_embed(
+        title=f"{title_emoji} Добро пожаловать в ASIXEZ {title_emoji}",
+        description="\n".join(
+            [
+                f"{line_emoji} Рады видеть тебя на сервере семьи.",
+                f"{line_emoji} Заявка на вступление: <#1466147735873786200>",
+                f"{line_emoji} Промокод: **`/promo ASIX`**",
+                f"{line_emoji} YouTube: https://www.youtube.com/@asixezzz",
+            ]
         ),
-        color=COLOR,
+        color=COLOR_PANEL,
         timestamp=datetime.now(timezone.utc),
     )
-    embed.set_thumbnail(url=member.display_avatar.url)
+    # Баннер находится в том же сообщении и выводится Discord снизу эмбэда.
+    if WELCOME_BANNER_URL:
+        channel_embed.set_image(url=WELCOME_BANNER_URL)
 
     await channel.send(
-        embed=embed,
-        view=CopyDiscordIdView(member.id),
+        content=member.mention,
+        embed=channel_embed,
         allowed_mentions=discord.AllowedMentions(users=True),
     )
+
+    dm_embed = make_embed(
+        title=f"{title_emoji} Добро пожаловать в ASIXEZ {title_emoji}",
+        description="\n".join(
+            [
+                f"{line_emoji} Ты можешь оставить заявку на вступление в канале: https://discord.com/channels/1466147160763666472/1466147735873786200",
+                f"{line_emoji} Если ты не вводил промокод, введи в чате: **`/promo ASIX`**",
+                f"{line_emoji} Обязательно подпишись на наш Ютуб канал: https://www.youtube.com/@asixezzz",
+            ]
+        ),
+        color=COLOR_PANEL,
+    )
     if WELCOME_BANNER_URL:
-        banner_embed = discord.Embed(color=COLOR)
-        banner_embed.set_image(url=WELCOME_BANNER_URL)
-        await channel.send(embed=banner_embed)
+        dm_embed.set_image(url=WELCOME_BANNER_URL)
+    try:
+        await member.send(embed=dm_embed)
+    except Exception:
+        # Личные сообщения могут быть отключены пользователем — вход на сервер
+        # при этом не должен завершаться ошибкой.
+        pass
 
 
 async def send_famq_leave_message(member: discord.Member) -> None:
@@ -3161,6 +2951,59 @@ class FamqPanelView(discord.ui.View):
             await interaction.response.send_message("Не удалось определить сервер.", ephemeral=True)
             return
         await show_application_modal(interaction, selected.values[0], self.guild_id)
+
+    async def apply_callback(self, interaction: discord.Interaction) -> None:
+        options = get_visible_application_options(self.guild_id)
+        if not options:
+            await interaction.response.send_message("Подача заявок сейчас недоступна.", ephemeral=True)
+            return
+        await show_application_modal(interaction, options[0]["key"], self.guild_id)
+
+
+class FamqApplicationLayoutView(discord.ui.LayoutView):
+    """Цельная Components V2-карточка подачи заявок только для Denver."""
+
+    def __init__(self, guild_id: int, guild: discord.Guild | None = None):
+        super().__init__(timeout=None)
+        self.guild_id = guild_id
+        actual_guild = guild or bot.get_guild(guild_id)
+        intro_emoji = get_guild_emoji_text(actual_guild, EMOJI_APPLICATION_INTRO_ID, "✦")
+        denver_emoji = get_custom_emoji_markup(actual_guild, DENVER_EMOJI_ID, "Denver")
+        is_open = bool(get_visible_application_options(guild_id))
+
+        apply_button = discord.ui.Button(
+            custom_id=f"famq_apply_{guild_id}",
+            label="Подать заявку" if is_open else "Набор временно закрыт",
+            style=discord.ButtonStyle.secondary,
+            disabled=not is_open,
+        )
+        apply_button.callback = self.apply_callback
+
+        # LayoutView автоматически отправляет MessageFlags.components_v2=True.
+        application_card = discord.ui.Container(
+            discord.ui.MediaGallery(discord.MediaGalleryItem(PANEL_BANNER_URL)),
+            discord.ui.TextDisplay(f"## {intro_emoji} Путь в семью начинается здесь!"),
+            discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
+            discord.ui.TextDisplay(
+                "Заполни анкету — после проверки рекрутеры свяжутся с тобой.\n\n"
+                f"**Заявки принимаются на сервере {denver_emoji} Denver.**"
+            ),
+            discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+            discord.ui.TextDisplay(
+                "**Рассмотрение заявки**\n"
+                "• Уведомление о приглашении на обзвон обычно отправляется в личные сообщения.\n"
+                "> Обычно заявки обрабатываются в течение 1–2 дней — всё зависит от загруженности рекрутеров."
+            ),
+            discord.ui.TextDisplay(
+                "**Требования**\n"
+                "> Укажи все обязательные данные анкеты: имя и возраст IRL, левел, онлайн и часовой пояс, "
+                "фракцию, игровой ник и Static-ID."
+            ),
+            discord.ui.Separator(visible=True, spacing=discord.SeparatorSpacing.large),
+            discord.ui.ActionRow(apply_button),
+            accent_colour=COLOR_PANEL,
+        )
+        self.add_item(application_card)
 
     async def apply_callback(self, interaction: discord.Interaction) -> None:
         options = get_visible_application_options(self.guild_id)
@@ -4289,7 +4132,8 @@ class RecruiterActionView(discord.ui.View):
                             f"Ваша заявка была успешно принята рекрутером: **<@{interaction.user.id}>**.",
                             "- Для получения инвайта обратитесь к любому старшему в игре.",
                             "- На данный момент Вы в академии семьи, чтобы получить ранг смените фамилию в игре на ASIXEZ, и обратитесь к любому старшему для повышения.",
-                            "- Если Вы не вводили промокод, то введите в чат `/promo FED`, и получите 50.000$ при достижении 3 уровня, и дополнительные 50.000 от нашей семьи за ввод промокода.",
+                            "- Если Вы не вводили промокод, то введите в чат `/promo ASIX`, и получите 50.000$ при достижении 3 уровня, и дополнительные 50.000 от нашей семьи за ввод промокода.",
+                            "- Регистрация по промокоду: https://majestic-rp.ru/register?utm_campaign=ASIX",
                         ]
                     )
                 ),
@@ -4600,6 +4444,60 @@ async def publish_staff_panel(guild: discord.Guild) -> bool:
         return False
 
 
+def build_nickname_dm_embed(guild: discord.Guild, prefix: str) -> discord.Embed:
+    line_emoji = get_guild_emoji_text(guild, EMOJI_WELCOME_LINE_ID, "•")
+    return make_embed(
+        title="Проверьте никнейм",
+        description="\n".join(
+            [
+                f"{line_emoji} Ваш никнейм на сервере ASIXEZ сейчас не соответствует форме.",
+                f"{line_emoji} Нужный формат: **`{prefix} | Имя РЛ | Статик`**",
+                "",
+                "Нажмите кнопку ниже, укажите имя РЛ и Static-ID — бот сам поставит правильный никнейм.",
+            ]
+        ),
+        color=COLOR_MUTED,
+        timestamp=datetime.now(timezone.utc),
+    )
+
+
+async def send_nickname_fix_dms(guild: discord.Guild, bad_members: list[tuple[discord.Member, str]]) -> int:
+    """Уведомляет каждого участника с неправильным ником один раз для текущей формы."""
+    state = panel_store.setdefault("famq_nickname_notice_state", {})
+    if not isinstance(state, dict):
+        state = {}
+        panel_store["famq_nickname_notice_state"] = state
+
+    active_user_ids = {str(member.id) for member, _prefix in bad_members}
+    changed = False
+    for user_id in list(state):
+        if user_id not in active_user_ids:
+            state.pop(user_id, None)
+            changed = True
+
+    sent_count = 0
+    for member, prefix in bad_members:
+        user_id = str(member.id)
+        if state.get(user_id) == prefix:
+            continue
+        try:
+            await member.send(
+                embed=build_nickname_dm_embed(guild, prefix),
+                view=NicknameSelfFixView(),
+            )
+        except Exception:
+            # Если ЛС закрыты, оставляем участника без отметки — при следующем
+            # обновлении отчёта бот повторит попытку.
+            continue
+        state[user_id] = prefix
+        changed = True
+        sent_count += 1
+
+    if changed:
+        save_panels()
+    return sent_count
+
+
 async def publish_nickname_report(guild: discord.Guild) -> bool:
     if guild.id != FAMQ_GUILD_ID:
         return False
@@ -4622,7 +4520,11 @@ async def publish_nickname_report(guild: discord.Guild) -> bool:
             view=NicknameSelfFixView() if bad_members else None,
             allowed_mentions=discord.AllowedMentions(users=True),
         )
-        console_log(f"Nickname report published to {channel.id}: {len(bad_members)} bad nicknames")
+        dm_count = await send_nickname_fix_dms(guild, bad_members)
+        console_log(
+            f"Nickname report published to {channel.id}: {len(bad_members)} bad nicknames; "
+            f"sent {dm_count} DM notices"
+        )
         return True
     except Exception as error:
         console_log(f"Nickname report publish failed: {error}")
@@ -4668,8 +4570,7 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
     stored = panel_store.get(get_project_panel_key(PANEL_KEY, guild.id), {})
     if not force_recreate and stored.get("messageId"):
         try:
-            # Старый вариант панели отправлял баннер отдельным сообщением сверху.
-            # Удаляем его при первом обновлении, потому что теперь он внизу эмбэда.
+            # Удаляем отдельный баннер от прежней версии панели: теперь он первый элемент карточки.
             if stored.get("imageMessageId"):
                 try:
                     banner_message = await channel.fetch_message(int(stored["imageMessageId"]))
@@ -4680,7 +4581,15 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
                 panel_store[get_project_panel_key(PANEL_KEY, guild.id)] = stored
                 save_panels()
             panel_message = await channel.fetch_message(int(stored["messageId"]))
-            await panel_message.edit(embed=build_panel_embed(guild.id), view=FamqPanelView(guild.id))
+            if guild.id == FAMQ_GUILD_ID:
+                # LayoutView заменяет прежний embed одной Components V2-карточкой.
+                await panel_message.edit(
+                    content=None,
+                    embed=None,
+                    view=FamqApplicationLayoutView(guild.id, guild),
+                )
+            else:
+                await panel_message.edit(embed=build_panel_embed(guild.id, guild), view=FamqPanelView(guild.id))
             return False
         except Exception:
             pass
@@ -4695,7 +4604,11 @@ async def create_or_update_main_panel(guild: discord.Guild, force_recreate: bool
         except Exception:
             pass
 
-    panel_message = await channel.send(embed=build_panel_embed(guild.id), view=FamqPanelView(guild.id))
+    if guild.id == FAMQ_GUILD_ID:
+        # discord.py выставляет MessageFlags.components_v2 для LayoutView автоматически.
+        panel_message = await channel.send(view=FamqApplicationLayoutView(guild.id, guild))
+    else:
+        panel_message = await channel.send(embed=build_panel_embed(guild.id, guild), view=FamqPanelView(guild.id))
     panel_store[get_project_panel_key(PANEL_KEY, guild.id)] = {
         "messageId": panel_message.id,
         "channelId": channel.id,
@@ -4712,28 +4625,6 @@ async def create_or_update_info_panel(guild: discord.Guild, force_recreate: bool
         guild,
         int(project["info_channel_id"]),
         get_project_panel_key(INFO_PANEL_KEY, guild.id),
-    )
-
-
-async def create_or_update_contracts_panel(guild: discord.Guild, force_recreate: bool = False) -> bool:
-    project = get_project(guild)
-    if project is None:
-        return False
-    return await disable_panel_publication(
-        guild,
-        int(project["contracts_channel_id"]),
-        get_project_panel_key(CONTRACTS_PANEL_KEY, guild.id),
-    )
-
-
-async def create_or_update_fleet_panel(guild: discord.Guild, force_recreate: bool = False) -> bool:
-    project = get_project(guild)
-    if project is None:
-        return False
-    return await disable_panel_publication(
-        guild,
-        int(project["fleet_channel_id"]),
-        get_project_panel_key(FLEET_PANEL_KEY, guild.id),
     )
 
 
@@ -5142,7 +5033,7 @@ async def giveaway_command(interaction: discord.Interaction) -> None:
 
 @bot.tree.command(
     name="application_toggle",
-    description="Открыть или закрыть набор заявок на Denver. Доступно только роли 1467068877572800720.",
+    description="Открыть или закрыть набор заявок на Denver. Доступно ролям 1467068877572800720 и Chief Recruit.",
 )
 @app_commands.guilds(discord.Object(id=FAMQ_GUILD_ID))
 @app_commands.describe(action="Выберите действие: open или close")
@@ -5152,7 +5043,10 @@ async def application_toggle(interaction: discord.Interaction, action: str) -> N
         return
 
     member = interaction.user if isinstance(interaction.user, discord.Member) else None
-    if member is None or not member_has_any_role(member, [1467068877572800720]):
+    if member is None or not member_has_any_role(
+        member,
+        [APPLICATION_CONTROL_ROLE_ID, CHIEF_RECRUIT_ROLE_ID],
+    ):
         await interaction.response.send_message("У вас нет прав для использования этой команды.", ephemeral=True)
         return
 
@@ -5179,7 +5073,10 @@ async def restore_persistent_views() -> None:
         stored = panel_store.get(get_project_panel_key(PANEL_KEY, guild_id), {})
         message_id = stored.get("messageId")
         if message_id:
-            bot.add_view(FamqPanelView(guild_id), message_id=int(message_id))
+            if guild_id == FAMQ_GUILD_ID:
+                bot.add_view(FamqApplicationLayoutView(guild_id), message_id=int(message_id))
+            else:
+                bot.add_view(FamqPanelView(guild_id), message_id=int(message_id))
     bot.add_view(StaffPanelView())
     bot.add_view(VoiceRoomControlView())
     bot.add_view(NicknameSelfFixView())
@@ -6028,8 +5925,6 @@ async def on_ready() -> None:
 
         created_main = await create_or_update_main_panel(guild, force_recreate=True)
         created_info = await create_or_update_info_panel(guild, force_recreate=False)
-        created_contracts = await create_or_update_contracts_panel(guild, force_recreate=False)
-        created_fleet = await create_or_update_fleet_panel(guild, force_recreate=False)
         created_voice = await create_or_update_voice_panel(guild, force_recreate=True)
         setup_issues: list[str] = []
         await cleanup_stale_voice_rooms(guild)
@@ -6041,8 +5936,6 @@ async def on_ready() -> None:
         project_name = project.get("project_name", str(guild.id)) if project else str(guild.id)
         console_log(f"{project_name} main panel " + ("created" if created_main else "updated"))
         console_log(f"{project_name} info panel " + ("created" if created_info else "updated"))
-        console_log(f"{project_name} contracts panel " + ("created" if created_contracts else "updated"))
-        console_log(f"{project_name} fleet panel " + ("created" if created_fleet else "updated"))
         console_log(f"{project_name} voice panel " + ("created" if created_voice else "updated"))
         console_log(f"{project_name} resolved application channels cleaned: {cleaned_resolved}")
         console_log(f"{project_name} pending applications refreshed: {refreshed_applications}")
